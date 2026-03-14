@@ -62,6 +62,17 @@ class BTCIndexApp {
     // 获取广告配置
     async fetchAdsConfig() {
         try {
+            // 优先从 localStorage 读取管理后台配置
+            const savedConfig = localStorage.getItem('btcIndexConfig');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                if (config.ads && Object.keys(config.ads).length > 0) {
+                    this.adsData = config.ads;
+                    this.renderAds();
+                    return;
+                }
+            }
+            
             // 尝试从后端API获取
             const response = await fetch('/api/ads');
             if (response.ok) {
