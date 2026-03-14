@@ -124,7 +124,7 @@ class BTCIndexApp {
                 </div>
                 <p class="text-sm text-gray-300 mb-4">${ad.description}</p>
                 <button class="w-full py-2 px-4 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors group-hover:bg-white/20">
-                    立即注册
+                    立即下载
                 </button>
             </div>
         `).join('');
