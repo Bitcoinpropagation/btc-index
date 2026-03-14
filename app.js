@@ -94,7 +94,7 @@ class BTCIndexApp {
             "binance": {
                 "name": "币安",
                 "url": "https://www.binance.com/zh-CN/join?ref=",
-                "logo": "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+                "logo": "https://i.imgur.com/wDQ1vBH.jpeg",
                 "description": "全球领先的数字资产交易平台，注册即享交易手续费优惠",
                 "color": "from-yellow-500/20 to-yellow-600/10",
                 "borderColor": "border-yellow-500/30"
@@ -102,7 +102,7 @@ class BTCIndexApp {
             "okx": {
                 "name": "OKX",
                 "url": "https://www.okx.com/join/",
-                "logo": "https://cryptologos.cc/logos/okb-okb-logo.png",
+                "logo": "https://i.imgur.com/e6AEOlE.png",
                 "description": "一站式加密货币交易平台，Web3钱包入口",
                 "color": "from-blue-500/20 to-blue-600/10",
                 "borderColor": "border-blue-500/30"
@@ -110,7 +110,7 @@ class BTCIndexApp {
             "bitget": {
                 "name": "Bitget",
                 "url": "https://www.bitget.com/zh-CN/referral/register?code=",
-                "logo": "https://cryptologos.cc/logos/bitget-token-bgb-logo.png",
+                "logo": "https://i.imgur.com/kN2B203.png",
                 "description": "专注合约交易，跟单交易首选平台",
                 "color": "from-purple-500/20 to-purple-600/10",
                 "borderColor": "border-purple-500/30"
