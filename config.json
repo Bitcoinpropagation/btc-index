@@ -1,0 +1,38 @@
+{
+  "ads": {
+    "binance": {
+      "name": "币安",
+      "key": "binance",
+      "url": "https://www.binance.com/zh-CN/join?ref=你的邀请码",
+      "logo": "https://i.imgur.com/wDQ1vBH.jpeg",
+      "description": "全球领先的数字资产交易平台，注册即享交易手续费优惠",
+      "color": "yellow",
+      "order": 0
+    },
+    "okx": {
+      "name": "OKX",
+      "key": "okx",
+      "url": "https://www.okx.com/join/你的邀请码",
+      "logo": "https://i.imgur.com/e6AEOlE.png",
+      "description": "一站式加密货币交易平台，Web3钱包入口",
+      "color": "blue",
+      "order": 1
+    },
+    "bitget": {
+      "name": "Bitget",
+      "key": "bitget",
+      "url": "https://www.bitget.com/zh-CN/referral/register?code=你的邀请码",
+      "logo": "https://i.imgur.com/kN2B203.png",
+      "description": "专注合约交易，跟单交易首选平台",
+      "color": "purple",
+      "order": 2
+    }
+  },
+  "settings": {
+    "siteTitle": "比特币定投指数",
+    "siteDesc": "基于 200 日定投成本和指数增长估值的定投策略工具",
+    "refreshInterval": 30,
+    "dataSource": "coingecko",
+    "showAds": true
+  }
+}

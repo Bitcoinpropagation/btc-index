@@ -73,14 +73,23 @@ class BTCIndexApp {
                 }
             }
             
-            // 尝试从后端API获取
-            const response = await fetch('/api/ads');
-            if (response.ok) {
-                this.adsData = await response.json();
-            } else {
-                // 使用默认配置
-                this.adsData = this.getDefaultAdsConfig();
+            // 尝试从 config.json 加载
+            try {
+                const response = await fetch('config.json');
+                if (response.ok) {
+                    const config = await response.json();
+                    if (config.ads && Object.keys(config.ads).length > 0) {
+                        this.adsData = config.ads;
+                        this.renderAds();
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log('config.json 加载失败，使用默认配置');
             }
+            
+            // 使用默认配置
+            this.adsData = this.getDefaultAdsConfig();
         } catch (error) {
             console.log('使用默认广告配置');
             this.adsData = this.getDefaultAdsConfig();
