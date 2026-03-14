@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ahr999 比特币定投指数</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">ahr999 比特币定投指数</h1>
+            <p class="text-gray-400">基于《囤比特币》的定投策略工具</p>
+        </header>
+
+        <!-- Current Index Display -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass rounded-xl p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">当前指数</div>
+                <div id="currentIndex" class="text-4xl font-bold">--</div>
+                <div id="indexStatus" class="text-sm mt-2">--</div>
+            </div>
+            <div class="glass rounded-xl p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">比特币价格</div>
+                <div id="btcPrice" class="text-2xl font-bold">$--</div>
+            </div>
+            <div class="glass rounded-xl p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">200日定投成本</div>
+                <div id="avgCost" class="text-2xl font-bold">$--</div>
+            </div>
+            <div class="glass rounded-xl p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">投资建议</div>
+                <div id="suggestion" class="text-lg font-bold">--</div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="glass rounded-xl p-4 mb-8">
+            <div id="chart" class="w-full h-96"></div>
+        </div>
+
+        <!-- Index Zones -->
+        <div class="glass rounded-xl p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">ahr999 指数区间说明</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-green-900/50 rounded-lg p-4 text-center border border-green-500/30">
+                    <div class="text-2xl font-bold text-green-400">&lt; 0.45</div>
+                    <div class="text-sm text-gray-300">抄底区间</div>
+                    <div class="text-xs text-gray-500 mt-1">大胆买入</div>
+                </div>
+                <div class="bg-blue-900/50 rounded-lg p-4 text-center border border-blue-500/30">
+                    <div class="text-2xl font-bold text-blue-400">0.45 - 1.2</div>
+                    <div class="text-sm text-gray-300">定投区间</div>
+                    <div class="text-xs text-gray-500 mt-1">坚持定投</div>
+                </div>
+                <div class="bg-yellow-900/50 rounded-lg p-4 text-center border border-yellow-500/30">
+                    <div class="text-2xl font-bold text-yellow-400">1.2 - 5</div>
+                    <div class="text-sm text-gray-300">观望区间</div>
+                    <div class="text-xs text-gray-500 mt-1">停止定投</div>
+                </div>
+                <div class="bg-red-900/50 rounded-lg p-4 text-center border border-red-500/30">
+                    <div class="text-2xl font-bold text-red-400">&gt; 5</div>
+                    <div class="text-sm text-gray-300">可能见顶</div>
+                    <div class="text-xs text-gray-500 mt-1">考虑卖出</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formula -->
+        <div class="glass rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-4">计算公式</h2>
+            <div class="bg-black/30 rounded-lg p-4 font-mono text-sm">
+                <p class="mb-2">ahr999 指数 = (比特币价格 / 200日定投成本) × (比特币价格 / 指数增长估值)</p>
+                <p class="text-gray-400">其中：</p>
+                <ul class="list-disc list-inside text-gray-400 mt-2 space-y-1">
+                    <li>200日定投成本：过去200天的比特币平均价格</li>
+                    <li>指数增长估值：基于比特币历史价格拟合的指数增长曲线</li>
+                </ul>
+            </div>
+            <p class="text-xs text-gray-500 mt-4">
+                数据来源：CoinGecko API | 仅供参考，不构成投资建议
+            </p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
