@@ -1,36 +1,156 @@
-// ahr999 指数计算和图表展示 - 简化版
-
-class AHR999Index {
+// 比特币实时价格和广告管理
+class BTCIndexApp {
     constructor() {
         this.btcData = [];
         this.chart = null;
         this.priceSeries = null;
         this.ma200Series = null;
         this.indexSeries = null;
+        this.currentBTCPrice = 0;
+        this.priceChange24h = 0;
+        this.adsData = null;
     }
 
-    // 生成模拟数据
-    generateMockData() {
+    // 获取实时比特币价格
+    async fetchBTCPrice() {
+        try {
+            // 使用 CoinGecko API
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+            if (!response.ok) throw new Error('价格获取失败');
+            const data = await response.json();
+            this.currentBTCPrice = data.bitcoin.usd;
+            this.priceChange24h = data.bitcoin.usd_24h_change || 0;
+            this.updatePriceDisplay();
+            return this.currentBTCPrice;
+        } catch (error) {
+            console.error('获取价格失败:', error);
+            // 使用备用 API
+            try {
+                const response = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+                const data = await response.json();
+                this.currentBTCPrice = parseFloat(data.lastPrice);
+                this.priceChange24h = parseFloat(data.priceChangePercent);
+                this.updatePriceDisplay();
+                return this.currentBTCPrice;
+            } catch (backupError) {
+                console.error('备用API也失败:', backupError);
+                return null;
+            }
+        }
+    }
+
+    // 更新价格显示
+    updatePriceDisplay() {
+        const priceEl = document.getElementById('livePrice');
+        const changeEl = document.getElementById('priceChange');
+        if (priceEl) {
+            priceEl.textContent = '$' + this.currentBTCPrice.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        }
+        if (changeEl) {
+            const isPositive = this.priceChange24h >= 0;
+            changeEl.textContent = (isPositive ? '+' : '') + this.priceChange24h.toFixed(2) + '%';
+            changeEl.className = `text-sm font-medium px-2 py-1 rounded ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`;
+        }
+    }
+
+    // 获取广告配置
+    async fetchAdsConfig() {
+        try {
+            // 尝试从后端API获取
+            const response = await fetch('/api/ads');
+            if (response.ok) {
+                this.adsData = await response.json();
+            } else {
+                // 使用默认配置
+                this.adsData = this.getDefaultAdsConfig();
+            }
+        } catch (error) {
+            console.log('使用默认广告配置');
+            this.adsData = this.getDefaultAdsConfig();
+        }
+        this.renderAds();
+    }
+
+    // 默认广告配置
+    getDefaultAdsConfig() {
+        return {
+            "binance": {
+                "name": "币安",
+                "url": "https://www.binance.com/zh-CN/join?ref=",
+                "logo": "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+                "description": "全球领先的数字资产交易平台，注册即享交易手续费优惠",
+                "color": "from-yellow-500/20 to-yellow-600/10",
+                "borderColor": "border-yellow-500/30"
+            },
+            "okx": {
+                "name": "OKX",
+                "url": "https://www.okx.com/join/",
+                "logo": "https://cryptologos.cc/logos/okb-okb-logo.png",
+                "description": "一站式加密货币交易平台，Web3钱包入口",
+                "color": "from-blue-500/20 to-blue-600/10",
+                "borderColor": "border-blue-500/30"
+            },
+            "bitget": {
+                "name": "Bitget",
+                "url": "https://www.bitget.com/zh-CN/referral/register?code=",
+                "logo": "https://cryptologos.cc/logos/bitget-token-bgb-logo.png",
+                "description": "专注合约交易，跟单交易首选平台",
+                "color": "from-purple-500/20 to-purple-600/10",
+                "borderColor": "border-purple-500/30"
+            }
+        };
+    }
+
+    // 渲染广告卡片
+    renderAds() {
+        const container = document.getElementById('adsContainer');
+        if (!container || !this.adsData) return;
+
+        container.innerHTML = Object.entries(this.adsData).map(([key, ad]) => `
+            <div class="glass rounded-xl p-6 border ${ad.borderColor} bg-gradient-to-br ${ad.color} hover:scale-105 transition-transform cursor-pointer group"
+                 onclick="window.open('${ad.url}', '_blank')">
+                <div class="flex items-center gap-4 mb-3">
+                    <img src="${ad.logo}" alt="${ad.name}" class="w-12 h-12 rounded-full bg-white/10 p-1">
+                    <div>
+                        <h3 class="text-xl font-bold">${ad.name}</h3>
+                        <span class="text-xs text-gray-400">推荐交易所</span>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-300 mb-4">${ad.description}</p>
+                <button class="w-full py-2 px-4 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors group-hover:bg-white/20">
+                    立即注册
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // 生成历史数据（使用真实价格作为基准）
+    generateHistoricalData(currentPrice) {
         const data = [];
         const now = Math.floor(Date.now() / 1000);
         const days = 1825;
         
-        // 基于真实历史走势的关键节点
-        const keyPrices = {
-            1825: 10000, 1460: 12000, 1095: 60000, 730: 20000, 365: 40000, 0: 70576
+        // 基于真实历史走势的关键节点（相对比例）
+        const keyRatios = {
+            1825: 0.14,  // 5年前约为当前价格的14%
+            1460: 0.17,
+            1095: 0.85,  // 2021年高点附近
+            730: 0.28,   // 2022年低点
+            365: 0.57,
+            0: 1.0       // 当前
         };
         
         for (let i = days; i >= 0; i--) {
             const time = now - i * 86400;
-            let basePrice;
-            if (i >= 1460) basePrice = this.lerp(i, 1825, 1460, keyPrices[1825], keyPrices[1460]);
-            else if (i >= 1095) basePrice = this.lerp(i, 1460, 1095, keyPrices[1460], keyPrices[1095]);
-            else if (i >= 730) basePrice = this.lerp(i, 1095, 730, keyPrices[1095], keyPrices[730]);
-            else if (i >= 365) basePrice = this.lerp(i, 730, 365, keyPrices[730], keyPrices[365]);
-            else basePrice = this.lerp(i, 365, 0, keyPrices[365], keyPrices[0]);
+            let baseRatio;
+            if (i >= 1460) baseRatio = this.lerp(i, 1825, 1460, keyRatios[1825], keyRatios[1460]);
+            else if (i >= 1095) baseRatio = this.lerp(i, 1460, 1095, keyRatios[1460], keyRatios[1095]);
+            else if (i >= 730) baseRatio = this.lerp(i, 1095, 730, keyRatios[1095], keyRatios[730]);
+            else if (i >= 365) baseRatio = this.lerp(i, 730, 365, keyRatios[730], keyRatios[365]);
+            else baseRatio = this.lerp(i, 365, 0, keyRatios[365], keyRatios[0]);
             
             const volatility = 1 + (Math.random() - 0.5) * 0.15;
-            data.push({ time, price: basePrice * volatility });
+            data.push({ time, price: currentPrice * baseRatio * volatility });
         }
         return data;
     }
@@ -125,10 +245,22 @@ class AHR999Index {
         document.getElementById('suggestion').className = `text-lg font-bold ${status.color}`;
     }
 
+    // 启动定时刷新
+    startPriceRefresh() {
+        // 立即获取一次
+        this.fetchBTCPrice();
+        // 每30秒刷新
+        setInterval(() => this.fetchBTCPrice(), 30000);
+    }
+
     async run() {
         try {
-            // 使用模拟数据
-            this.btcData = this.generateMockData();
+            // 获取实时价格
+            const currentPrice = await this.fetchBTCPrice();
+            const basePrice = currentPrice || 70000;
+            
+            // 生成基于真实价格的历史数据
+            this.btcData = this.generateHistoricalData(basePrice);
             
             let data = this.calculate200DMA(this.btcData);
             data = this.calculateExponentialGrowth(data);
@@ -139,6 +271,13 @@ class AHR999Index {
             this.initChart();
             this.updateChart(data);
             this.updateDisplay(status);
+            
+            // 获取广告配置
+            await this.fetchAdsConfig();
+            
+            // 启动价格定时刷新
+            this.startPriceRefresh();
+            
         } catch (error) {
             console.error('运行失败:', error);
             document.getElementById('currentIndex').textContent = '错误';
@@ -149,6 +288,6 @@ class AHR999Index {
 
 // 页面加载完成后运行
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new AHR999Index();
+    const app = new BTCIndexApp();
     app.run();
 });
