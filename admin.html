@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 比特币定投指数</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .input-field {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 1);
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 2px solid transparent;
+            color: #9ca3af;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .tab-btn:hover {
+            color: #e5e7eb;
+        }
+        .preview-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">管理后台</h1>
+                <p class="text-gray-400 text-sm">比特币定投指数 - 广告与配置管理</p>
+            </div>
+            <a href="/btc-index/" class="text-blue-400 hover:text-blue-300 transition-colors">
+                ← 返回首页
+            </a>
+        </header>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="glass rounded-xl p-8 max-w-md mx-auto">
+            <h2 class="text-xl font-bold mb-6 text-center">管理员登录</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">密码</label>
+                    <input type="password" id="adminPassword" class="input-field" placeholder="输入管理密码">
+                </div>
+                <button onclick="login()" class="btn-primary w-full">登录</button>
+                <p id="loginError" class="text-red-400 text-sm text-center hidden">密码错误</p>
+            </div>
+            <p class="text-xs text-gray-500 text-center mt-4">
+                默认密码: admin123 (请在生产环境修改)
+            </p>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="hidden">
+            <!-- Tabs -->
+            <div class="glass rounded-t-xl border-b border-gray-700">
+                <div class="flex">
+                    <button class="tab-btn active" onclick="switchTab('ads')" data-tab="ads">广告管理</button>
+                    <button class="tab-btn" onclick="switchTab('settings')" data-tab="settings">基本设置</button>
+                    <button class="tab-btn" onclick="switchTab('data')" data-tab="data">数据管理</button>
+                </div>
+            </div>
+
+            <!-- Ads Tab -->
+            <div id="adsTab" class="glass rounded-b-xl p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">广告配置</h2>
+                    <button onclick="addNewAd()" class="btn-primary">+ 添加广告</button>
+                </div>
+
+                <!-- Ads List -->
+                <div id="adsList" class="space-y-4">
+                    <!-- 动态生成 -->
+                </div>
+
+                <!-- Add/Edit Form -->
+                <div id="adForm" class="hidden mt-6 p-6 bg-white/5 rounded-xl border border-white/10">
+                    <h3 class="text-lg font-bold mb-4" id="formTitle">添加广告</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">平台名称</label>
+                            <input type="text" id="adName" class="input-field" placeholder="如: 币安">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">唯一标识 (key)</label>
+                            <input type="text" id="adKey" class="input-field" placeholder="如: binance">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm text-gray-400 mb-2">推广链接</label>
+                            <input type="url" id="adUrl" class="input-field" placeholder="https://...">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm text-gray-400 mb-2">Logo URL</label>
+                            <input type="url" id="adLogo" class="input-field" placeholder="https://...">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm text-gray-400 mb-2">描述</label>
+                            <input type="text" id="adDesc" class="input-field" placeholder="简短描述平台特点">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">主题色</label>
+                            <select id="adColor" class="input-field">
+                                <option value="yellow">黄色 (币安风格)</option>
+                                <option value="blue">蓝色 (OKX风格)</option>
+                                <option value="purple">紫色 (Bitget风格)</option>
+                                <option value="green">绿色</option>
+                                <option value="red">红色</option>
+                                <option value="orange">橙色</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">排序</label>
+                            <input type="number" id="adOrder" class="input-field" value="0">
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-6">
+                        <button onclick="saveAd()" class="btn-primary">保存</button>
+                        <button onclick="cancelEdit()" class="px-4 py-2 text-gray-400 hover:text-white transition-colors">取消</button>
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-bold mb-4">预览效果</h3>
+                    <div id="adsPreview" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="glass rounded-b-xl p-6 hidden">
+                <h2 class="text-xl font-bold mb-6">基本设置</h2>
+                <div class="space-y-6 max-w-2xl">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">网站标题</label>
+                        <input type="text" id="siteTitle" class="input-field" value="比特币定投指数">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">网站描述</label>
+                        <input type="text" id="siteDesc" class="input-field" value="基于 200 日定投成本和指数增长估值的定投策略工具">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">价格刷新间隔 (秒)</label>
+                        <input type="number" id="refreshInterval" class="input-field" value="30" min="10" max="300">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">默认数据源</label>
+                        <select id="dataSource" class="input-field">
+                            <option value="coingecko">CoinGecko (默认)</option>
+                            <option value="binance">Binance</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" id="showAds" class="w-5 h-5 rounded" checked>
+                        <label for="showAds" class="text-gray-300">显示广告区域</label>
+                    </div>
+                    <button onclick="saveSettings()" class="btn-primary">保存设置</button>
+                </div>
+            </div>
+
+            <!-- Data Tab -->
+            <div id="dataTab" class="glass rounded-b-xl p-6 hidden">
+                <h2 class="text-xl font-bold mb-6">数据管理</h2>
+                <div class="space-y-6">
+                    <div class="p-4 bg-white/5 rounded-xl">
+                        <h3 class="font-bold mb-2">导出配置</h3>
+                        <p class="text-sm text-gray-400 mb-4">下载当前所有配置的 JSON 文件</p>
+                        <button onclick="exportConfig()" class="btn-primary">导出配置</button>
+                    </div>
+                    <div class="p-4 bg-white/5 rounded-xl">
+                        <h3 class="font-bold mb-2">导入配置</h3>
+                        <p class="text-sm text-gray-400 mb-4">从 JSON 文件恢复配置</p>
+                        <input type="file" id="importFile" accept=".json" class="hidden" onchange="importConfig(this)">
+                        <button onclick="document.getElementById('importFile').click()" class="btn-primary">选择文件导入</button>
+                    </div>
+                    <div class="p-4 bg-red-900/20 rounded-xl border border-red-500/30">
+                        <h3 class="font-bold mb-2 text-red-400">重置数据</h3>
+                        <p class="text-sm text-gray-400 mb-4">清除所有自定义配置，恢复默认设置</p>
+                        <button onclick="resetConfig()" class="btn-danger">重置为默认</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 默认配置
+        const defaultConfig = {
+            ads: {
+                binance: {
+                    name: "币安",
+                    key: "binance",
+                    url: "https://www.binance.com/zh-CN/join?ref=",
+                    logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+                    description: "全球领先的数字资产交易平台，注册即享交易手续费优惠",
+                    color: "yellow",
+                    order: 0
+                },
+                okx: {
+                    name: "OKX",
+                    key: "okx",
+                    url: "https://www.okx.com/join/",
+                    logo: "https://cryptologos.cc/logos/okb-okb-logo.png",
+                    description: "一站式加密货币交易平台，Web3钱包入口",
+                    color: "blue",
+                    order: 1
+                },
+                bitget: {
+                    name: "Bitget",
+                    key: "bitget",
+                    url: "https://www.bitget.com/zh-CN/referral/register?code=",
+                    logo: "https://cryptologos.cc/logos/bitget-token-bgb-logo.png",
+                    description: "专注合约交易，跟单交易首选平台",
+                    color: "purple",
+                    order: 2
+                }
+            },
+            settings: {
+                siteTitle: "比特币定投指数",
+                siteDesc: "基于 200 日定投成本和指数增长估值的定投策略工具",
+                refreshInterval: 30,
+                dataSource: "coingecko",
+                showAds: true
+            }
+        };
+
+        // 颜色映射
+        const colorMap = {
+            yellow: { from: "from-yellow-500/20", to: "to-yellow-600/10", border: "border-yellow-500/30", text: "text-yellow-400" },
+            blue: { from: "from-blue-500/20", to: "to-blue-600/10", border: "border-blue-500/30", text: "text-blue-400" },
+            purple: { from: "from-purple-500/20", to: "to-purple-600/10", border: "border-purple-500/30", text: "text-purple-400" },
+            green: { from: "from-green-500/20", to: "to-green-600/10", border: "border-green-500/30", text: "text-green-400" },
+            red: { from: "from-red-500/20", to: "to-red-600/10", border: "border-red-500/30", text: "text-red-400" },
+            orange: { from: "from-orange-500/20", to: "to-orange-600/10", border: "border-orange-500/30", text: "text-orange-400" }
+        };
+
+        let config = JSON.parse(JSON.stringify(defaultConfig));
+        let editingKey = null;
+
+        // 登录
+        function login() {
+            const password = document.getElementById('adminPassword').value;
+            // 简单密码验证 (生产环境应该用更安全的方式)
+            if (password === 'admin123') {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                loadConfig();
+                renderAdsList();
+                renderAdsPreview();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        // 加载配置
+        function loadConfig() {
+            const saved = localStorage.getItem('btcIndexConfig');
+            if (saved) {
+                config = JSON.parse(saved);
+            }
+            // 填充设置表单
+            document.getElementById('siteTitle').value = config.settings.siteTitle;
+            document.getElementById('siteDesc').value = config.settings.siteDesc;
+            document.getElementById('refreshInterval').value = config.settings.refreshInterval;
+            document.getElementById('dataSource').value = config.settings.dataSource;
+            document.getElementById('showAds').checked = config.settings.showAds;
+        }
+
+        // 保存配置
+        function saveConfig() {
+            localStorage.setItem('btcIndexConfig', JSON.stringify(config));
+        }
+
+        // 切换标签
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            document.getElementById('adsTab').classList.add('hidden');
+            document.getElementById('settingsTab').classList.add('hidden');
+            document.getElementById('dataTab').classList.add('hidden');
+            document.getElementById(`${tab}Tab`).classList.remove('hidden');
+        }
+
+        // 渲染广告列表
+        function renderAdsList() {
+            const list = document.getElementById('adsList');
+            const ads = Object.values(config.ads).sort((a, b) => a.order - b.order);
+            
+            list.innerHTML = ads.map(ad => `
+                <div class="glass rounded-xl p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <img src="${ad.logo}" alt="${ad.name}" class="w-10 h-10 rounded-full bg-white/10 p-1">
+                        <div>
+                            <h4 class="font-bold">${ad.name}</h4>
+                            <p class="text-xs text-gray-400">${ad.description}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editAd('${ad.key}')" class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors">编辑</button>
+                        <button onclick="deleteAd('${ad.key}')" class="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染广告预览
+        function renderAdsPreview() {
+            const preview = document.getElementById('adsPreview');
+            const ads = Object.values(config.ads).sort((a, b) => a.order - b.order);
+            
+            preview.innerHTML = ads.map(ad => {
+                const colors = colorMap[ad.color] || colorMap.blue;
+                return `
+                    <div class="glass rounded-xl p-6 border ${colors.border} bg-gradient-to-br ${colors.from} ${colors.to}">
+                        <div class="flex items-center gap-4 mb-3">
+                            <img src="${ad.logo}" alt="${ad.name}" class="w-12 h-12 rounded-full bg-white/10 p-1">
+                            <div>
+                                <h3 class="text-xl font-bold">${ad.name}</h3>
+                                <span class="text-xs text-gray-400">推荐交易所</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-300 mb-4">${ad.description}</p>
+                        <button class="w-full py-2 px-4 bg-white/10 rounded-lg text-sm font-medium">立即注册</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 添加新广告
+        function addNewAd() {
+            editingKey = null;
+            document.getElementById('formTitle').textContent = '添加广告';
+            document.getElementById('adForm').classList.remove('hidden');
+            document.getElementById('adKey').disabled = false;
+            // 清空表单
+            document.getElementById('adName').value = '';
+            document.getElementById('adKey').value = '';
+            document.getElementById('adUrl').value = '';
+            document.getElementById('adLogo').value = '';
+            document.getElementById('adDesc').value = '';
+            document.getElementById('adColor').value = 'blue';
+            document.getElementById('adOrder').value = Object.keys(config.ads).length;
+        }
+
+        // 编辑广告
+        function editAd(key) {
+            editingKey = key;
+            const ad = config.ads[key];
+            document.getElementById('formTitle').textContent = '编辑广告';
+            document.getElementById('adForm').classList.remove('hidden');
+            document.getElementById('adKey').disabled = true;
+            
+            document.getElementById('adName').value = ad.name;
+            document.getElementById('adKey').value = ad.key;
+            document.getElementById('adUrl').value = ad.url;
+            document.getElementById('adLogo').value = ad.logo;
+            document.getElementById('adDesc').value = ad.description;
+            document.getElementById('adColor').value = ad.color;
+            document.getElementById('adOrder').value = ad.order;
+        }
+
+        // 保存广告
+        function saveAd() {
+            const key = document.getElementById('adKey').value.trim();
+            const name = document.getElementById('adName').value.trim();
+            const url = document.getElementById('adUrl').value.trim();
+            const logo = document.getElementById('adLogo').value.trim();
+            const desc = document.getElementById('adDesc').value.trim();
+            const color = document.getElementById('adColor').value;
+            const order = parseInt(document.getElementById('adOrder').value) || 0;
+
+            if (!key || !name || !url) {
+                alert('请填写必填项');
+                return;
+            }
+
+            config.ads[key] = { key, name, url, logo, description: desc, color, order };
+            saveConfig();
+            renderAdsList();
+            renderAdsPreview();
+            cancelEdit();
+        }
+
+        // 删除广告
+        function deleteAd(key) {
+            if (confirm('确定要删除这个广告吗？')) {
+                delete config.ads[key];
+                saveConfig();
+                renderAdsList();
+                renderAdsPreview();
+            }
+        }
+
+        // 取消编辑
+        function cancelEdit() {
+            document.getElementById('adForm').classList.add('hidden');
+            editingKey = null;
+        }
+
+        // 保存设置
+        function saveSettings() {
+            config.settings.siteTitle = document.getElementById('siteTitle').value;
+            config.settings.siteDesc = document.getElementById('siteDesc').value;
+            config.settings.refreshInterval = parseInt(document.getElementById('refreshInterval').value);
+            config.settings.dataSource = document.getElementById('dataSource').value;
+            config.settings.showAds = document.getElementById('showAds').checked;
+            saveConfig();
+            alert('设置已保存');
+        }
+
+        // 导出配置
+        function exportConfig() {
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `btc-index-config-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 导入配置
+        function importConfig(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (confirm('导入将覆盖当前所有配置，确定继续吗？')) {
+                        config = imported;
+                        saveConfig();
+                        loadConfig();
+                        renderAdsList();
+                        renderAdsPreview();
+                        alert('配置已导入');
+                    }
+                } catch (err) {
+                    alert('文件格式错误');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 重置配置
+        function resetConfig() {
+            if (confirm('确定要重置所有配置吗？此操作不可恢复。')) {
+                config = JSON.parse(JSON.stringify(defaultConfig));
+                saveConfig();
+                loadConfig();
+                renderAdsList();
+                renderAdsPreview();
+                alert('已恢复默认配置');
+            }
+        }
+
+        // 回车登录
+        document.getElementById('adminPassword')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>
