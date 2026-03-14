@@ -43,6 +43,8 @@ class BTCIndexApp {
     updatePriceDisplay() {
         const priceEl = document.getElementById('livePrice');
         const changeEl = document.getElementById('priceChange');
+        const btcPriceEl = document.getElementById('btcPrice');
+        
         if (priceEl) {
             priceEl.textContent = '$' + this.currentBTCPrice.toLocaleString('en-US', { maximumFractionDigits: 2 });
         }
@@ -50,6 +52,10 @@ class BTCIndexApp {
             const isPositive = this.priceChange24h >= 0;
             changeEl.textContent = (isPositive ? '+' : '') + this.priceChange24h.toFixed(2) + '%';
             changeEl.className = `text-sm font-medium px-2 py-1 rounded ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`;
+        }
+        // 同步更新指数模块中的比特币价格
+        if (btcPriceEl && this.currentBTCPrice > 0) {
+            btcPriceEl.textContent = '$' + this.currentBTCPrice.toLocaleString('en-US', { maximumFractionDigits: 0 });
         }
     }
 
@@ -239,7 +245,9 @@ class BTCIndexApp {
         document.getElementById('currentIndex').className = `text-4xl font-bold ${status.color}`;
         document.getElementById('indexStatus').textContent = status.status;
         document.getElementById('indexStatus').className = `text-sm mt-2 ${status.color}`;
-        document.getElementById('btcPrice').textContent = '$' + status.price.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        // 使用实时价格，如果没有则使用状态价格
+        const displayPrice = this.currentBTCPrice || status.price;
+        document.getElementById('btcPrice').textContent = '$' + displayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 });
         document.getElementById('avgCost').textContent = '$' + status.ma200.toLocaleString('en-US', { maximumFractionDigits: 0 });
         document.getElementById('suggestion').textContent = status.suggestion;
         document.getElementById('suggestion').className = `text-lg font-bold ${status.color}`;
