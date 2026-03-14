@@ -11,10 +11,22 @@ class AHR999Index {
 
     // 获取 OKX 实时行情
     async fetchOKXTicker() {
+        console.log('开始获取 OKX 行情...');
+        
+        // 尝试直接请求 OKX
         try {
-            const response = await fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT');
+            const response = await fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
+            console.log('OKX 响应状态:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('OKX 数据:', data);
+                
                 if (data.data && data.data[0]) {
                     const ticker = data.data[0];
                     return {
@@ -29,20 +41,43 @@ class AHR999Index {
                         ts: parseInt(ticker.ts)
                     };
                 }
+            } else {
+                console.error('OKX API 错误:', response.status, response.statusText);
             }
         } catch (error) {
-            console.log('OKX 行情获取失败:', error);
+            console.error('OKX 行情获取失败:', error.message);
         }
-        return null;
+        
+        // 使用模拟数据作为备选
+        console.log('使用模拟行情数据');
+        return {
+            last: 70576,
+            bidPx: 70575,
+            askPx: 70576,
+            bidSz: 0.5,
+            askSz: 0.3,
+            high24h: 71200,
+            low24h: 69800,
+            vol24h: 12500,
+            ts: Date.now(),
+            isMock: true
+        };
     }
 
     // 更新 OKX 行情显示
     updateOKXDisplay(ticker) {
-        if (!ticker) return;
+        if (!ticker) {
+            console.log('没有行情数据可显示');
+            return;
+        }
+        
+        console.log('更新行情显示:', ticker);
+        
+        const mockBadge = ticker.isMock ? '<span class="text-xs text-yellow-500 ml-2">(模拟数据)</span>' : '';
         
         const okxHtml = `
             <div class="glass rounded-xl p-4 mb-4">
-                <h3 class="text-lg font-bold mb-3 text-gray-300">OKX 实时行情 (BTC-USDT)</h3>
+                <h3 class="text-lg font-bold mb-3 text-gray-300">OKX 实时行情 (BTC-USDT)${mockBadge}</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="text-center">
                         <div class="text-gray-400 text-xs">最新价格</div>
@@ -54,11 +89,11 @@ class AHR999Index {
                     </div>
                     <div class="text-center">
                         <div class="text-gray-400 text-xs">24h 最高 / 最低</div>
-                        <div class="text-sm font-bold text-green-400">$${ticker.high24h?.toLocaleString() || '--'} <span class="text-gray-500">/</span> <span class="text-red-400">$${ticker.low24h?.toLocaleString() || '--'}</span></div>
+                        <div class="text-sm font-bold text-green-400">$${ticker.high24h ? ticker.high24h.toLocaleString() : '--'} <span class="text-gray-500">/</span> <span class="text-red-400">$${ticker.low24h ? ticker.low24h.toLocaleString() : '--'}</span></div>
                     </div>
                     <div class="text-center">
                         <div class="text-gray-400 text-xs">24h 成交量</div>
-                        <div class="text-sm font-bold">${ticker.vol24h?.toFixed(2) || '--'} BTC</div>
+                        <div class="text-sm font-bold">${ticker.vol24h ? ticker.vol24h.toFixed(2) : '--'} BTC</div>
                     </div>
                 </div>
             </div>
@@ -355,9 +390,16 @@ class AHR999Index {
 
     // 主运行函数
     async run() {
+        console.log('开始运行 ahr999 指数...');
         try {
             // 获取数据
             await this.fetchBTCData();
+            
+            if (!this.btcData || this.btcData.length === 0) {
+                throw new Error('没有获取到数据');
+            }
+            
+            console.log('获取到数据点数:', this.btcData.length);
             
             // 计算指标
             let data = this.calculate200DMA(this.btcData);
@@ -366,15 +408,18 @@ class AHR999Index {
             
             // 获取当前状态
             const status = this.getCurrentStatus(data);
+            console.log('当前状态:', status);
             
             // 初始化并更新图表
             this.initChart();
             this.updateChart(data);
             this.updateDisplay(status);
+            
+            console.log('运行完成');
         } catch (error) {
             console.error('运行失败:', error);
             document.getElementById('currentIndex').textContent = '错误';
-            document.getElementById('indexStatus').textContent = '数据加载失败';
+            document.getElementById('indexStatus').textContent = '数据加载失败: ' + error.message;
         }
     }
 }
