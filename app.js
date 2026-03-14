@@ -9,8 +9,81 @@ class AHR999Index {
         this.indexSeries = null;
     }
 
+    // 获取 OKX 实时行情
+    async fetchOKXTicker() {
+        try {
+            const response = await fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.data && data.data[0]) {
+                    const ticker = data.data[0];
+                    return {
+                        last: parseFloat(ticker.last),
+                        bidPx: parseFloat(ticker.bidPx),
+                        askPx: parseFloat(ticker.askPx),
+                        bidSz: parseFloat(ticker.bidSz),
+                        askSz: parseFloat(ticker.askSz),
+                        high24h: parseFloat(ticker.high24h),
+                        low24h: parseFloat(ticker.low24h),
+                        vol24h: parseFloat(ticker.vol24h),
+                        ts: parseInt(ticker.ts)
+                    };
+                }
+            }
+        } catch (error) {
+            console.log('OKX 行情获取失败:', error);
+        }
+        return null;
+    }
+
+    // 更新 OKX 行情显示
+    updateOKXDisplay(ticker) {
+        if (!ticker) return;
+        
+        const okxHtml = `
+            <div class="glass rounded-xl p-4 mb-4">
+                <h3 class="text-lg font-bold mb-3 text-gray-300">OKX 实时行情 (BTC-USDT)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-gray-400 text-xs">最新价格</div>
+                        <div class="text-xl font-bold text-yellow-400">$${ticker.last.toLocaleString()}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-400 text-xs">买一 / 卖一</div>
+                        <div class="text-sm font-bold">$${ticker.bidPx.toLocaleString()} / $${ticker.askPx.toLocaleString()}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-400 text-xs">24h 最高 / 最低</div>
+                        <div class="text-sm font-bold text-green-400">$${ticker.high24h?.toLocaleString() || '--'} <span class="text-gray-500">/</span> <span class="text-red-400">$${ticker.low24h?.toLocaleString() || '--'}</span></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-400 text-xs">24h 成交量</div>
+                        <div class="text-sm font-bold">${ticker.vol24h?.toFixed(2) || '--'} BTC</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const existingOkx = document.getElementById('okx-ticker');
+        if (existingOkx) {
+            existingOkx.innerHTML = okxHtml;
+        } else {
+            const container = document.createElement('div');
+            container.id = 'okx-ticker';
+            container.innerHTML = okxHtml;
+            const chartDiv = document.getElementById('chart');
+            chartDiv.parentNode.insertBefore(container, chartDiv);
+        }
+    }
+
     // 尝试多个数据源获取比特币历史价格
     async fetchBTCData() {
+        // 同时获取 OKX 实时行情
+        this.okxTicker = await this.fetchOKXTicker();
+        if (this.okxTicker) {
+            this.updateOKXDisplay(this.okxTicker);
+        }
+
         // 尝试 CoinGecko
         try {
             const response = await fetch(
@@ -149,7 +222,9 @@ class AHR999Index {
 
     // 获取当前状态和建议
     getCurrentStatus(data) {
+        // 优先使用 OKX 实时价格
         const latest = data[data.length - 1];
+        const price = this.okxTicker ? this.okxTicker.last : latest.price;
         const ahr999 = latest.ahr999 || 0;
         
         let status, suggestion, color;
@@ -173,8 +248,8 @@ class AHR999Index {
         }
         
         return {
-            price: latest.price,
-            ma200: latest.ma200 || latest.price,
+            price: price,
+            ma200: latest.ma200 || price,
             ahr999: ahr999,
             status,
             suggestion,
