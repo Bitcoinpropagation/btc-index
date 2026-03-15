@@ -1,4 +1,4 @@
-// 比特币实时价格和广告管理
+// 比特币定投指数 - 完整优化版
 class BTCIndexApp {
     constructor() {
         this.btcData = [];
@@ -12,12 +12,12 @@ class BTCIndexApp {
         this.adsData = null;
         this.currentTimeRange = 'all';
         this.lastUpdateTime = null;
+        this.chartInitialized = false;
     }
 
     // 获取实时比特币价格
     async fetchBTCPrice() {
         try {
-            // 使用 CoinGecko API
             const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
             if (!response.ok) throw new Error('价格获取失败');
             const data = await response.json();
@@ -29,7 +29,6 @@ class BTCIndexApp {
             return this.currentBTCPrice;
         } catch (error) {
             console.error('获取价格失败:', error);
-            // 使用备用 API
             try {
                 const response = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
                 const data = await response.json();
@@ -75,7 +74,6 @@ class BTCIndexApp {
             changeEl.textContent = (isPositive ? '+' : '') + this.priceChange24h.toFixed(2) + '%';
             changeEl.className = `text-sm font-medium px-2 py-1 rounded ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`;
         }
-        // 同步更新指数模块中的比特币价格
         if (btcPriceEl && this.currentBTCPrice > 0) {
             btcPriceEl.textContent = '$' + this.currentBTCPrice.toLocaleString('en-US', { maximumFractionDigits: 0 });
         }
@@ -84,7 +82,6 @@ class BTCIndexApp {
     // 获取广告配置
     async fetchAdsConfig() {
         try {
-            // 优先从 localStorage 读取管理后台配置
             const savedConfig = localStorage.getItem('btcIndexConfig');
             if (savedConfig) {
                 const config = JSON.parse(savedConfig);
@@ -95,7 +92,6 @@ class BTCIndexApp {
                 }
             }
             
-            // 尝试从 config.json 加载
             try {
                 const response = await fetch('config.json');
                 if (response.ok) {
@@ -107,13 +103,11 @@ class BTCIndexApp {
                     }
                 }
             } catch (e) {
-                console.log('config.json 加载失败，使用默认配置');
+                console.log('config.json 加载失败');
             }
             
-            // 使用默认配置
             this.adsData = this.getDefaultAdsConfig();
         } catch (error) {
-            console.log('使用默认广告配置');
             this.adsData = this.getDefaultAdsConfig();
         }
         this.renderAds();
@@ -172,20 +166,14 @@ class BTCIndexApp {
         `).join('');
     }
 
-    // 生成历史数据（使用真实价格作为基准）
+    // 生成历史数据
     generateHistoricalData(currentPrice) {
         const data = [];
         const now = Math.floor(Date.now() / 1000);
         const days = 1825;
         
-        // 基于真实历史走势的关键节点（相对比例）
         const keyRatios = {
-            1825: 0.14,  // 5年前约为当前价格的14%
-            1460: 0.17,
-            1095: 0.85,  // 2021年高点附近
-            730: 0.28,   // 2022年低点
-            365: 0.57,
-            0: 1.0       // 当前
+            1825: 0.14, 1460: 0.17, 1095: 0.85, 730: 0.28, 365: 0.57, 0: 1.0
         };
         
         for (let i = days; i >= 0; i--) {
@@ -245,21 +233,34 @@ class BTCIndexApp {
         const latest = data[data.length - 1];
         const ahr999 = latest.ahr999 || 0;
         
-        let status, suggestion, color, bgColor;
+        let status, suggestion, color, bgColor, zoneId;
         if (ahr999 < 0.45) { 
-            status = '抄底区间'; suggestion = '大胆买入'; color = 'text-green-400'; bgColor = 'bg-green-500/20';
+            status = '抄底区间'; suggestion = '大胆买入'; color = 'text-green-400'; bgColor = 'bg-green-500/20'; zoneId = 'zone1';
         }
         else if (ahr999 < 1.2) { 
-            status = '定投区间'; suggestion = '坚持定投'; color = 'text-blue-400'; bgColor = 'bg-blue-500/20';
+            status = '定投区间'; suggestion = '坚持定投'; color = 'text-blue-400'; bgColor = 'bg-blue-500/20'; zoneId = 'zone2';
         }
         else if (ahr999 < 5) { 
-            status = '观望区间'; suggestion = '停止定投'; color = 'text-yellow-400'; bgColor = 'bg-yellow-500/20';
+            status = '观望区间'; suggestion = '停止定投'; color = 'text-yellow-400'; bgColor = 'bg-yellow-500/20'; zoneId = 'zone3';
         }
         else { 
-            status = '可能见顶'; suggestion = '考虑卖出'; color = 'text-red-400'; bgColor = 'bg-red-500/20';
+            status = '可能见顶'; suggestion = '考虑卖出'; color = 'text-red-400'; bgColor = 'bg-red-500/20'; zoneId = 'zone4';
         }
         
-        return { price: latest.price, ma200: latest.ma200 || latest.price, ahr999, status, suggestion, color, bgColor };
+        return { price: latest.price, ma200: latest.ma200 || latest.price, ahr999, status, suggestion, color, bgColor, zoneId };
+    }
+
+    // 高亮当前区间
+    highlightCurrentZone(zoneId) {
+        // 移除所有高亮
+        ['zone1', 'zone2', 'zone3', 'zone4'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('zone-active');
+        });
+        
+        // 添加当前高亮
+        const currentEl = document.getElementById(zoneId);
+        if (currentEl) currentEl.classList.add('zone-active');
     }
 
     // 设置时间范围
@@ -303,9 +304,13 @@ class BTCIndexApp {
         this.filteredData = this.btcData.filter(d => d.time >= cutoff);
     }
 
+    // 初始化图表
     initChart() {
         try {
             const chartContainer = document.getElementById('chart');
+            const loadingEl = document.getElementById('chartLoading');
+            const errorEl = document.getElementById('chartError');
+            
             if (!chartContainer) {
                 console.error('Chart container not found');
                 return false;
@@ -314,9 +319,14 @@ class BTCIndexApp {
             // 检查 lightweight-charts 是否加载
             if (typeof LightweightCharts === 'undefined') {
                 console.error('LightweightCharts not loaded');
-                document.getElementById('chartError')?.classList.remove('hidden');
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (errorEl) errorEl.classList.remove('hidden');
                 return false;
             }
+            
+            // 隐藏加载，显示图表
+            if (loadingEl) loadingEl.classList.add('hidden');
+            chartContainer.classList.remove('hidden');
             
             this.chart = LightweightCharts.createChart(chartContainer, {
                 layout: { 
@@ -334,38 +344,47 @@ class BTCIndexApp {
                 handleScale: { axisPressedMouseMove: false }
             });
 
+            // 比特币价格线
             this.priceSeries = this.chart.addLineSeries({ 
                 title: 'BTC 价格', 
                 color: '#f59e0b', 
                 lineWidth: 2 
             });
+            
+            // 200日均线
             this.ma200Series = this.chart.addLineSeries({ 
                 title: '200日定投成本', 
                 color: '#3b82f6', 
                 lineWidth: 1 
             });
+            
+            // 定投指数（改为此名称）
             this.indexSeries = this.chart.addLineSeries({ 
-                title: 'ahr999 指数', 
+                title: '定投指数', 
                 color: '#10b981', 
                 lineWidth: 2, 
                 priceScaleId: 'right' 
             });
+            
             this.chart.priceScale('right').applyOptions({ visible: true });
             
             // 响应式调整
-            window.addEventListener('resize', () => {
-                if (this.chart) {
-                    this.chart.applyOptions({
-                        width: chartContainer.clientWidth,
-                        height: chartContainer.clientHeight
-                    });
+            const resizeObserver = new ResizeObserver(entries => {
+                if (this.chart && entries[0]) {
+                    const { width, height } = entries[0].contentRect;
+                    this.chart.applyOptions({ width, height });
                 }
             });
+            resizeObserver.observe(chartContainer);
             
+            this.chartInitialized = true;
             return true;
         } catch (error) {
             console.error('Chart initialization failed:', error);
-            document.getElementById('chartError')?.classList.remove('hidden');
+            const loadingEl = document.getElementById('chartLoading');
+            const errorEl = document.getElementById('chartError');
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (errorEl) errorEl.classList.remove('hidden');
             return false;
         }
     }
@@ -399,7 +418,6 @@ class BTCIndexApp {
             indexStatusEl.className = `text-sm mt-2 ${status.color}`;
         }
         
-        // 使用实时价格，如果没有则使用状态价格
         const displayPrice = this.currentBTCPrice || status.price;
         if (btcPriceEl) {
             btcPriceEl.textContent = '$' + displayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -411,13 +429,47 @@ class BTCIndexApp {
             suggestionEl.textContent = status.suggestion;
             suggestionEl.className = `text-base md:text-lg font-bold ${status.color}`;
         }
+        
+        // 高亮当前区间
+        this.highlightCurrentZone(status.zoneId);
+    }
+
+    // 定投计算器
+    calculateDCA() {
+        const monthlyAmount = parseFloat(document.getElementById('monthlyAmount').value) || 1000;
+        const startDateInput = document.getElementById('startDate').value;
+        
+        if (!startDateInput) {
+            alert('请选择开始日期');
+            return;
+        }
+        
+        const startDate = new Date(startDateInput);
+        const now = new Date();
+        const months = Math.max(1, (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth()));
+        
+        const totalInvested = monthlyAmount * months;
+        
+        // 简化计算：假设平均购买价格为历史平均
+        const avgBuyPrice = this.btcData.reduce((sum, d) => sum + d.price, 0) / this.btcData.length;
+        const btcAmount = totalInvested / avgBuyPrice;
+        const currentValue = btcAmount * this.currentBTCPrice;
+        const profit = currentValue - totalInvested;
+        const profitRate = (profit / totalInvested) * 100;
+        
+        // 显示结果
+        document.getElementById('totalInvested').textContent = '$' + totalInvested.toLocaleString();
+        document.getElementById('currentValue').textContent = '$' + currentValue.toLocaleString();
+        document.getElementById('profitRate').textContent = (profitRate >= 0 ? '+' : '') + profitRate.toFixed(2) + '%';
+        document.getElementById('profitRate').className = `text-xl font-bold ${profitRate >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        document.getElementById('btcAmount').textContent = btcAmount.toFixed(4) + ' BTC';
+        
+        document.getElementById('dcaResult').classList.remove('hidden');
     }
 
     // 启动定时刷新
     startPriceRefresh() {
-        // 立即获取一次
         this.fetchBTCPrice();
-        // 每30秒刷新
         setInterval(() => this.fetchBTCPrice(), 30000);
     }
 
@@ -427,34 +479,38 @@ class BTCIndexApp {
             const currentPrice = await this.fetchBTCPrice();
             const basePrice = currentPrice || 70000;
             
-            // 生成基于真实价格的历史数据
+            // 生成历史数据
             this.btcData = this.generateHistoricalData(basePrice);
             
             let data = this.calculate200DMA(this.btcData);
             data = this.calculateExponentialGrowth(data);
             data = this.calculateAHR999(data);
             
-            // 保存完整数据
             this.btcData = data;
-            
-            // 默认显示全部数据
             this.filteredData = data;
             
             const status = this.getCurrentStatus(data);
             
-            // 初始化图表
-            const chartInitialized = this.initChart();
-            if (chartInitialized) {
-                this.updateChart(this.filteredData);
-            }
+            // 初始化图表（延迟确保库已加载）
+            setTimeout(() => {
+                const chartInitialized = this.initChart();
+                if (chartInitialized) {
+                    this.updateChart(this.filteredData);
+                }
+            }, 100);
             
             this.updateDisplay(status);
             
             // 获取广告配置
             await this.fetchAdsConfig();
             
-            // 启动价格定时刷新
+            // 启动定时刷新
             this.startPriceRefresh();
+            
+            // 设置默认开始日期（1年前）
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            document.getElementById('startDate').value = oneYearAgo.toISOString().split('T')[0];
             
         } catch (error) {
             console.error('运行失败:', error);
