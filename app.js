@@ -524,8 +524,8 @@ class BTCIndexApp {
             const status = this.getCurrentStatus(data);
             
             setTimeout(() => { if (this.initChart()) this.updateChart(this.filteredData); }, 100);
-            this.updateDisplay(status);
             this.updateUI();
+            this.updateDisplay(status);
             await this.fetchAdsConfig();
             this.startPriceRefresh();
             
