@@ -113,40 +113,26 @@ class BTCIndexApp {
         this.renderAds();
     }
 
-    // 默认广告配置
+    // 默认广告配置（空，等待后续添加）
     getDefaultAdsConfig() {
-        return {
-            "binance": {
-                "name": "币安",
-                "url": "https://www.binance.com/zh-CN/join?ref=",
-                "logo": "https://i.imgur.com/wDQ1vBH.jpeg",
-                "description": "全球领先的数字资产交易平台，注册即享交易手续费优惠",
-                "color": "from-yellow-500/20 to-yellow-600/10",
-                "borderColor": "border-yellow-500/30"
-            },
-            "okx": {
-                "name": "OKX",
-                "url": "https://www.okx.com/join/",
-                "logo": "https://i.imgur.com/e6AEOlE.png",
-                "description": "一站式加密货币交易平台，Web3钱包入口",
-                "color": "from-blue-500/20 to-blue-600/10",
-                "borderColor": "border-blue-500/30"
-            },
-            "bitget": {
-                "name": "Bitget",
-                "url": "https://www.bitget.com/zh-CN/referral/register?code=",
-                "logo": "https://i.imgur.com/kN2B203.png",
-                "description": "专注合约交易，跟单交易首选平台",
-                "color": "from-purple-500/20 to-purple-600/10",
-                "borderColor": "border-purple-500/30"
-            }
-        };
+        return {};
     }
 
     // 渲染广告卡片
     renderAds() {
         const container = document.getElementById('adsContainer');
-        if (!container || !this.adsData) return;
+        if (!container) return;
+
+        // 如果没有广告数据，显示占位提示
+        if (!this.adsData || Object.keys(this.adsData).length === 0) {
+            container.innerHTML = `
+                <div class="glass rounded-xl p-8 text-center col-span-1 md:col-span-3">
+                    <div class="text-gray-500 text-sm">推荐交易平台</div>
+                    <div class="text-gray-400 text-xs mt-2">敬请期待</div>
+                </div>
+            `;
+            return;
+        }
 
         container.innerHTML = Object.entries(this.adsData).map(([key, ad]) => `
             <div class="glass rounded-xl p-6 border ${ad.borderColor} bg-gradient-to-br ${ad.color} hover:scale-105 transition-transform cursor-pointer group"
