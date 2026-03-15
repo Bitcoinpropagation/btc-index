@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>比特币定投指数 - BTC DCA Index</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>₿</text></svg>">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="比特币定投指数工具，基于ahr999指数和200日定投成本，提供科学的定投策略建议">
+    <meta name="keywords" content="比特币,定投,ahr999指数,BTC,定投策略,比特币价格">
+    <meta name="author" content="Bitcoin Propagation">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bitcoinpropagation.github.io/btc-index/">
+    <meta property="og:title" content="比特币定投指数 - BTC DCA Index">
+    <meta property="og:description" content="基于200日定投成本的比特币定投策略工具，提供ahr999指数分析和投资建议">
+    <meta property="og:image" content="https://bitcoinpropagation.github.io/btc-index/og-image.png">
+    
+    <!-- Twitter Card -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bitcoinpropagation.github.io/btc-index/">
+    <meta property="twitter:title" content="比特币定投指数">
+    <meta property="twitter:description" content="基于200日定投成本的比特币定投策略工具">
+    <meta property="twitter:image" content="https://bitcoinpropagation.github.io/btc-index/og-image.png">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://api.coingecko.com">
+    <link rel="preconnect" href="https://i.imgur.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -21,6 +49,12 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
+        }
+        /* Mobile Optimizations */
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 250px !important;
+            }
         }
     </style>
 </head>
@@ -61,32 +95,52 @@
                     </div>
                 </div>
             </div>
+            <!-- Last Update Time -->
+            <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                <span class="text-xs text-gray-500">最后更新: <span id="lastUpdate">--</span></span>
+                <button onclick="window.location.reload()" class="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                    🔄 刷新数据
+                </button>
+            </div>
         </div>
 
         <!-- Current Index Display -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="glass rounded-xl p-6 text-center">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass rounded-xl p-4 md:p-6 text-center">
                 <div class="text-gray-400 text-sm mb-2">当前指数</div>
-                <div id="currentIndex" class="text-4xl font-bold">--</div>
+                <div id="currentIndex" class="text-3xl md:text-4xl font-bold">--</div>
                 <div id="indexStatus" class="text-sm mt-2">--</div>
             </div>
-            <div class="glass rounded-xl p-6 text-center">
+            <div class="glass rounded-xl p-4 md:p-6 text-center">
                 <div class="text-gray-400 text-sm mb-2">比特币价格</div>
-                <div id="btcPrice" class="text-2xl font-bold">$--</div>
+                <div id="btcPrice" class="text-xl md:text-2xl font-bold">$--</div>
             </div>
-            <div class="glass rounded-xl p-6 text-center">
+            <div class="glass rounded-xl p-4 md:p-6 text-center">
                 <div class="text-gray-400 text-sm mb-2">200日定投成本</div>
-                <div id="avgCost" class="text-2xl font-bold">$--</div>
+                <div id="avgCost" class="text-xl md:text-2xl font-bold">$--</div>
             </div>
-            <div class="glass rounded-xl p-6 text-center">
+            <div class="glass rounded-xl p-4 md:p-6 text-center">
                 <div class="text-gray-400 text-sm mb-2">投资建议</div>
-                <div id="suggestion" class="text-lg font-bold">--</div>
+                <div id="suggestion" class="text-base md:text-lg font-bold">--</div>
             </div>
         </div>
 
-        <!-- Chart -->
+        <!-- Chart with Time Range Selector -->
         <div class="glass rounded-xl p-4 mb-8">
-            <div id="chart" class="w-full h-96"></div>
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                <h2 class="text-lg font-bold">历史走势</h2>
+                <div class="flex gap-2">
+                    <button onclick="app.setTimeRange('7d')" class="time-range-btn px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20 transition-colors" data-range="7d">7天</button>
+                    <button onclick="app.setTimeRange('30d')" class="time-range-btn px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20 transition-colors" data-range="30d">30天</button>
+                    <button onclick="app.setTimeRange('90d')" class="time-range-btn px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20 transition-colors" data-range="90d">90天</button>
+                    <button onclick="app.setTimeRange('1y')" class="time-range-btn px-3 py-1 text-sm rounded bg-blue-500/30 hover:bg-blue-500/40 transition-colors" data-range="1y">1年</button>
+                    <button onclick="app.setTimeRange('all')" class="time-range-btn px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20 transition-colors" data-range="all">全部</button>
+                </div>
+            </div>
+            <div id="chart" class="w-full h-64 md:h-96 chart-container"></div>
+            <div id="chartError" class="hidden text-center text-red-400 py-8">
+                <p>图表加载失败，请刷新页面重试</p>
+            </div>
         </div>
 
         <!-- Index Zones -->
@@ -153,6 +207,24 @@
             </p>
         </div>
     </div>
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "比特币定投指数",
+        "description": "基于200日定投成本的比特币定投策略工具，提供ahr999指数分析和投资建议",
+        "url": "https://bitcoinpropagation.github.io/btc-index/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
 
     <script src="app.js"></script>
 </body>

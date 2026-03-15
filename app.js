@@ -2,6 +2,7 @@
 class BTCIndexApp {
     constructor() {
         this.btcData = [];
+        this.filteredData = [];
         this.chart = null;
         this.priceSeries = null;
         this.ma200Series = null;
@@ -9,6 +10,8 @@ class BTCIndexApp {
         this.currentBTCPrice = 0;
         this.priceChange24h = 0;
         this.adsData = null;
+        this.currentTimeRange = 'all';
+        this.lastUpdateTime = null;
     }
 
     // 获取实时比特币价格
@@ -20,7 +23,9 @@ class BTCIndexApp {
             const data = await response.json();
             this.currentBTCPrice = data.bitcoin.usd;
             this.priceChange24h = data.bitcoin.usd_24h_change || 0;
+            this.lastUpdateTime = new Date();
             this.updatePriceDisplay();
+            this.updateLastUpdateTime();
             return this.currentBTCPrice;
         } catch (error) {
             console.error('获取价格失败:', error);
@@ -30,12 +35,29 @@ class BTCIndexApp {
                 const data = await response.json();
                 this.currentBTCPrice = parseFloat(data.lastPrice);
                 this.priceChange24h = parseFloat(data.priceChangePercent);
+                this.lastUpdateTime = new Date();
                 this.updatePriceDisplay();
+                this.updateLastUpdateTime();
                 return this.currentBTCPrice;
             } catch (backupError) {
                 console.error('备用API也失败:', backupError);
                 return null;
             }
+        }
+    }
+
+    // 更新最后更新时间
+    updateLastUpdateTime() {
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl && this.lastUpdateTime) {
+            const timeString = this.lastUpdateTime.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            lastUpdateEl.textContent = timeString;
         }
     }
 
@@ -136,7 +158,7 @@ class BTCIndexApp {
             <div class="glass rounded-xl p-6 border ${ad.borderColor} bg-gradient-to-br ${ad.color} hover:scale-105 transition-transform cursor-pointer group"
                  onclick="window.open('${ad.url}', '_blank')">
                 <div class="flex items-center gap-4 mb-3">
-                    <img src="${ad.logo}" alt="${ad.name}" class="w-12 h-12 rounded-full bg-white/10 p-1">
+                    <img src="${ad.logo}" alt="${ad.name}" class="w-12 h-12 rounded-full bg-white/10 p-1" loading="lazy">
                     <div>
                         <h3 class="text-xl font-bold">${ad.name}</h3>
                         <span class="text-xs text-gray-400">推荐交易所</span>
@@ -223,33 +245,134 @@ class BTCIndexApp {
         const latest = data[data.length - 1];
         const ahr999 = latest.ahr999 || 0;
         
-        let status, suggestion, color;
-        if (ahr999 < 0.45) { status = '抄底区间'; suggestion = '大胆买入'; color = 'text-green-400'; }
-        else if (ahr999 < 1.2) { status = '定投区间'; suggestion = '坚持定投'; color = 'text-blue-400'; }
-        else if (ahr999 < 5) { status = '观望区间'; suggestion = '停止定投'; color = 'text-yellow-400'; }
-        else { status = '可能见顶'; suggestion = '考虑卖出'; color = 'text-red-400'; }
+        let status, suggestion, color, bgColor;
+        if (ahr999 < 0.45) { 
+            status = '抄底区间'; suggestion = '大胆买入'; color = 'text-green-400'; bgColor = 'bg-green-500/20';
+        }
+        else if (ahr999 < 1.2) { 
+            status = '定投区间'; suggestion = '坚持定投'; color = 'text-blue-400'; bgColor = 'bg-blue-500/20';
+        }
+        else if (ahr999 < 5) { 
+            status = '观望区间'; suggestion = '停止定投'; color = 'text-yellow-400'; bgColor = 'bg-yellow-500/20';
+        }
+        else { 
+            status = '可能见顶'; suggestion = '考虑卖出'; color = 'text-red-400'; bgColor = 'bg-red-500/20';
+        }
         
-        return { price: latest.price, ma200: latest.ma200 || latest.price, ahr999, status, suggestion, color };
+        return { price: latest.price, ma200: latest.ma200 || latest.price, ahr999, status, suggestion, color, bgColor };
+    }
+
+    // 设置时间范围
+    setTimeRange(range) {
+        this.currentTimeRange = range;
+        
+        // 更新按钮样式
+        document.querySelectorAll('.time-range-btn').forEach(btn => {
+            if (btn.dataset.range === range) {
+                btn.classList.remove('bg-white/10');
+                btn.classList.add('bg-blue-500/30');
+            } else {
+                btn.classList.remove('bg-blue-500/30');
+                btn.classList.add('bg-white/10');
+            }
+        });
+        
+        // 过滤数据
+        this.filterDataByRange();
+        
+        // 更新图表
+        if (this.chart && this.filteredData.length > 0) {
+            this.updateChart(this.filteredData);
+        }
+    }
+
+    // 根据时间范围过滤数据
+    filterDataByRange() {
+        const now = Math.floor(Date.now() / 1000);
+        let days;
+        
+        switch(this.currentTimeRange) {
+            case '7d': days = 7; break;
+            case '30d': days = 30; break;
+            case '90d': days = 90; break;
+            case '1y': days = 365; break;
+            default: days = this.btcData.length;
+        }
+        
+        const cutoff = now - days * 86400;
+        this.filteredData = this.btcData.filter(d => d.time >= cutoff);
     }
 
     initChart() {
-        const chartContainer = document.getElementById('chart');
-        
-        this.chart = LightweightCharts.createChart(chartContainer, {
-            layout: { background: { color: 'transparent' }, textColor: '#d1d5db' },
-            grid: { vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, horzLines: { color: 'rgba(255, 255, 255, 0.1)' } },
-            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
-            timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
-        });
+        try {
+            const chartContainer = document.getElementById('chart');
+            if (!chartContainer) {
+                console.error('Chart container not found');
+                return false;
+            }
+            
+            // 检查 lightweight-charts 是否加载
+            if (typeof LightweightCharts === 'undefined') {
+                console.error('LightweightCharts not loaded');
+                document.getElementById('chartError')?.classList.remove('hidden');
+                return false;
+            }
+            
+            this.chart = LightweightCharts.createChart(chartContainer, {
+                layout: { 
+                    background: { color: 'transparent' }, 
+                    textColor: '#d1d5db' 
+                },
+                grid: { 
+                    vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                    horzLines: { color: 'rgba(255, 255, 255, 0.1)' } 
+                },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                handleScroll: { vertTouchDrag: false },
+                handleScale: { axisPressedMouseMove: false }
+            });
 
-        this.priceSeries = this.chart.addLineSeries({ title: 'BTC 价格', color: '#f59e0b', lineWidth: 2 });
-        this.ma200Series = this.chart.addLineSeries({ title: '200日定投成本', color: '#3b82f6', lineWidth: 1 });
-        this.indexSeries = this.chart.addLineSeries({ title: 'ahr999 指数', color: '#10b981', lineWidth: 2, priceScaleId: 'right' });
-        this.chart.priceScale('right').applyOptions({ visible: true });
+            this.priceSeries = this.chart.addLineSeries({ 
+                title: 'BTC 价格', 
+                color: '#f59e0b', 
+                lineWidth: 2 
+            });
+            this.ma200Series = this.chart.addLineSeries({ 
+                title: '200日定投成本', 
+                color: '#3b82f6', 
+                lineWidth: 1 
+            });
+            this.indexSeries = this.chart.addLineSeries({ 
+                title: 'ahr999 指数', 
+                color: '#10b981', 
+                lineWidth: 2, 
+                priceScaleId: 'right' 
+            });
+            this.chart.priceScale('right').applyOptions({ visible: true });
+            
+            // 响应式调整
+            window.addEventListener('resize', () => {
+                if (this.chart) {
+                    this.chart.applyOptions({
+                        width: chartContainer.clientWidth,
+                        height: chartContainer.clientHeight
+                    });
+                }
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('Chart initialization failed:', error);
+            document.getElementById('chartError')?.classList.remove('hidden');
+            return false;
+        }
     }
 
     updateChart(data) {
+        if (!this.priceSeries || !this.ma200Series || !this.indexSeries) return;
+        
         const priceData = data.filter(d => d.price).map(d => ({ time: d.time, value: d.price }));
         const ma200Data = data.filter(d => d.ma200).map(d => ({ time: d.time, value: d.ma200 }));
         const indexData = data.filter(d => d.ahr999).map(d => ({ time: d.time, value: d.ahr999 }));
@@ -261,16 +384,33 @@ class BTCIndexApp {
     }
 
     updateDisplay(status) {
-        document.getElementById('currentIndex').textContent = status.ahr999.toFixed(2);
-        document.getElementById('currentIndex').className = `text-4xl font-bold ${status.color}`;
-        document.getElementById('indexStatus').textContent = status.status;
-        document.getElementById('indexStatus').className = `text-sm mt-2 ${status.color}`;
+        const currentIndexEl = document.getElementById('currentIndex');
+        const indexStatusEl = document.getElementById('indexStatus');
+        const btcPriceEl = document.getElementById('btcPrice');
+        const avgCostEl = document.getElementById('avgCost');
+        const suggestionEl = document.getElementById('suggestion');
+        
+        if (currentIndexEl) {
+            currentIndexEl.textContent = status.ahr999.toFixed(2);
+            currentIndexEl.className = `text-3xl md:text-4xl font-bold ${status.color}`;
+        }
+        if (indexStatusEl) {
+            indexStatusEl.textContent = status.status;
+            indexStatusEl.className = `text-sm mt-2 ${status.color}`;
+        }
+        
         // 使用实时价格，如果没有则使用状态价格
         const displayPrice = this.currentBTCPrice || status.price;
-        document.getElementById('btcPrice').textContent = '$' + displayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 });
-        document.getElementById('avgCost').textContent = '$' + status.ma200.toLocaleString('en-US', { maximumFractionDigits: 0 });
-        document.getElementById('suggestion').textContent = status.suggestion;
-        document.getElementById('suggestion').className = `text-lg font-bold ${status.color}`;
+        if (btcPriceEl) {
+            btcPriceEl.textContent = '$' + displayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+        if (avgCostEl) {
+            avgCostEl.textContent = '$' + status.ma200.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+        if (suggestionEl) {
+            suggestionEl.textContent = status.suggestion;
+            suggestionEl.className = `text-base md:text-lg font-bold ${status.color}`;
+        }
     }
 
     // 启动定时刷新
@@ -294,10 +434,20 @@ class BTCIndexApp {
             data = this.calculateExponentialGrowth(data);
             data = this.calculateAHR999(data);
             
+            // 保存完整数据
+            this.btcData = data;
+            
+            // 默认显示全部数据
+            this.filteredData = data;
+            
             const status = this.getCurrentStatus(data);
             
-            this.initChart();
-            this.updateChart(data);
+            // 初始化图表
+            const chartInitialized = this.initChart();
+            if (chartInitialized) {
+                this.updateChart(this.filteredData);
+            }
+            
             this.updateDisplay(status);
             
             // 获取广告配置
@@ -316,6 +466,6 @@ class BTCIndexApp {
 
 // 页面加载完成后运行
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new BTCIndexApp();
-    app.run();
+    window.app = new BTCIndexApp();
+    window.app.run();
 });
