@@ -32,6 +32,12 @@ const i18n = {
         zone4: "> 5",
         zone4Name: "Possible Top",
         zone4Desc: "Consider Selling",
+        minerCost: "Miner Cost",
+        minerCostDesc: "Estimated average cost for miners to produce 1 BTC",
+        priceToMinerRatio: "Price/Miner Ratio",
+        minerProfit: "Miners Profitable | Network Healthy",
+        minerLowProfit: "Miners Low Profit | Watch Cautiously",
+        minerLoss: "Miners at Loss | Possible Bottom",
         dcaCalculator: "DCA Profit Calculator",
         monthlyAmount: "Monthly Amount (USD)",
         startDate: "Start Date",
@@ -45,6 +51,9 @@ const i18n = {
         minerCost: "Miner Cost",
         minerCostDesc: "Estimated average cost for miners to produce 1 BTC",
         priceToMinerRatio: "Price/Miner Ratio",
+        minerProfit: "Miners Profitable | Network Healthy",
+        minerLowProfit: "Miners Low Profit | Watch Cautiously",
+        minerLoss: "Miners at Loss | Possible Bottom",
         disclaimer: "Data source: CoinGecko API | For reference only, not investment advice",
         chartLoading: "Loading chart...",
         chartError: "Chart failed to load, please refresh"
@@ -94,6 +103,9 @@ const i18n = {
         minerCost: "矿工成本",
         minerCostDesc: "矿工生产1枚BTC的预估平均成本",
         priceToMinerRatio: "价格/成本比",
+        minerProfit: "矿工盈利 | 网络健康",
+        minerLowProfit: "矿工微利 | 谨慎观望",
+        minerLoss: "矿工亏损 | 可能底部",
         disclaimer: "数据来源：CoinGecko API | 仅供参考，不构成投资建议",
         chartLoading: "正在加载图表...",
         chartError: "图表加载失败，请刷新页面重试"
@@ -130,6 +142,12 @@ const i18n = {
         zone4: "> 5",
         zone4Name: "天井可能性",
         zone4Desc: "売却検討",
+        minerCost: "マイニングコスト",
+        minerCostDesc: "1BTCの生産にかかる推定平均コスト",
+        priceToMinerRatio: "価格/コスト比",
+        minerProfit: "マイナー収益 | ネットワーク健全",
+        minerLowProfit: "マイナー低収益 | 慎重に観望",
+        minerLoss: "マイナー赤字 | 底打ち可能性",
         dcaCalculator: "積立収益計算機",
         monthlyAmount: "月積立金額 (USD)",
         startDate: "開始日",
@@ -793,13 +811,13 @@ class BTCIndexApp {
         
         if (suggestionEl) {
             if (ratio > 1.5) {
-                suggestionEl.textContent = '矿工盈利 | 网络健康';
+                suggestionEl.textContent = this.t('minerProfit');
                 suggestionEl.className = 'text-xs mt-1 text-green-400';
             } else if (ratio > 1) {
-                suggestionEl.textContent = '矿工微利 | 谨慎观望';
+                suggestionEl.textContent = this.t('minerLowProfit');
                 suggestionEl.className = 'text-xs mt-1 text-yellow-400';
             } else {
-                suggestionEl.textContent = '矿工亏损 | 可能底部';
+                suggestionEl.textContent = this.t('minerLoss');
                 suggestionEl.className = 'text-xs mt-1 text-red-400';
             }
         }
