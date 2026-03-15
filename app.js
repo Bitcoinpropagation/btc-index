@@ -221,7 +221,10 @@ class BTCIndexApp {
         if (resultLabels[2]) resultLabels[2].textContent = this.t('profitRate');
         if (resultLabels[3]) resultLabels[3].textContent = this.t('btcAmount');
         
-        document.querySelector('#adsContainer').previousElementSibling.textContent = this.t('recommended');
+        const adsContainer = document.querySelector('#adsContainer');
+        if (adsContainer && adsContainer.previousElementSibling) {
+            adsContainer.previousElementSibling.textContent = this.t('recommended');
+        }
         
         document.querySelector('.glass.rounded-xl.p-6.text-center p').innerHTML = 
             this.t('disclaimer') + ' | <a href="https://github.com/Bitcoinpropagation/btc-index" target="_blank" class="text-blue-400 hover:underline">GitHub</a>';
@@ -492,7 +495,7 @@ class BTCIndexApp {
         const container = document.getElementById('adsContainer');
         if (!container) return;
         if (!this.adsData || Object.keys(this.adsData).length === 0) {
-            container.innerHTML = `<div class="glass rounded-xl p-8 text-center col-span-1 md:col-span-3"><div class="text-gray-500 text-sm">${this.t('recommended')}</div><div class="text-gray-400 text-xs mt-2">${this.t('comingSoon')}</div></div>`;
+            container.innerHTML = '';
             return;
         }
         container.innerHTML = Object.entries(this.adsData).map(([key, ad]) => `
