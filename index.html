@@ -165,35 +165,6 @@
             </div>
         </div>
 
-        <!-- Miner Cost Section -->
-        <div class="glass rounded-xl p-6 mb-8">
-            <h2 class="text-xl font-bold mb-4">矿工成本指标</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="text-center p-4 bg-white/5 rounded-lg">
-                    <div class="text-gray-400 text-sm mb-2">当前比特币价格</div>
-                    <div id="minerBtcPrice" class="text-2xl font-bold text-orange-400">$--</div>
-                </div>
-                <div class="text-center p-4 bg-white/5 rounded-lg">
-                    <div class="text-gray-400 text-sm mb-2">预估矿工成本</div>
-                    <div id="minerCost" class="text-2xl font-bold text-blue-400">$--</div>
-                    <div class="text-xs text-gray-500 mt-1">生产1枚BTC的平均成本</div>
-                </div>
-                <div class="text-center p-4 bg-white/5 rounded-lg">
-                    <div class="text-gray-400 text-sm mb-2">价格/成本比</div>
-                    <div id="priceToCostRatio" class="text-2xl font-bold">--</div>
-                    <div id="minerSuggestion" class="text-xs mt-1">--</div>
-                </div>
-            </div>
-            <div class="mt-4 p-4 bg-white/5 rounded-lg">
-                <div class="text-sm text-gray-400 mb-2">指标说明</div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div class="text-green-400"><span class="font-bold">价格 > 成本×1.5:</span> 矿工盈利，网络健康</div>
-                    <div class="text-yellow-400"><span class="font-bold">成本 < 价格 < 成本×1.5:</span> 矿工微利，谨慎观望</div>
-                    <div class="text-red-400"><span class="font-bold">价格 < 成本:</span> 矿工亏损，可能底部</div>
-                </div>
-            </div>
-        </div>
-
         <!-- Chart Section -->
         <div class="glass rounded-xl p-4 mb-8">
             <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
@@ -287,17 +258,40 @@
             </div>
         </div>
 
+        <!-- Miner Cost Section -->
+        <div class="glass rounded-xl p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">矿工成本指标</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center p-4 bg-white/5 rounded-lg">
+                    <div class="text-gray-400 text-sm mb-2">当前比特币价格</div>
+                    <div id="minerBtcPrice" class="text-2xl font-bold text-orange-400">$--</div>
+                </div>
+                <div class="text-center p-4 bg-white/5 rounded-lg">
+                    <div class="text-gray-400 text-sm mb-2">预估矿工成本</div>
+                    <div id="minerCost" class="text-2xl font-bold text-blue-400">$--</div>
+                    <div class="text-xs text-gray-500 mt-1">生产1枚BTC的平均成本</div>
+                </div>
+                <div class="text-center p-4 bg-white/5 rounded-lg">
+                    <div class="text-gray-400 text-sm mb-2">价格/成本比</div>
+                    <div id="priceToCostRatio" class="text-2xl font-bold">--</div>
+                    <div id="minerSuggestion" class="text-xs mt-1">--</div>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-white/5 rounded-lg">
+                <div class="text-sm text-gray-400 mb-2">指标说明</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="text-green-400"><span class="font-bold">价格 > 成本×1.5:</span> 矿工盈利，网络健康</div>
+                    <div class="text-yellow-400"><span class="font-bold">成本 < 价格 < 成本×1.5:</span> 矿工微利，谨慎观望</div>
+                    <div class="text-red-400"><span class="font-bold">价格 < 成本:</span> 矿工亏损，可能底部</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Disclaimer -->
         <div class="glass rounded-xl p-6 text-center">
-            <p class="text-xs text-gray-500 mb-2">
+            <p class="text-xs text-gray-500">
                 数据来源：CoinGecko API | 仅供参考，不构成投资建议 | 
                 <a href="https://github.com/Bitcoinpropagation/btc-index" target="_blank" class="text-blue-400 hover:underline">GitHub</a>
-            </p>
-            <p class="text-xs text-red-400/80">
-                ⚠️ 本网站不对中国大陆用户提供服务，请遵守当地法律法规
-            </p>
-            <p class="text-xs text-gray-500 mt-1">
-                ⚠️ This website is not available to users in mainland China. Please comply with local laws.
             </p>
         </div>
     </div>
