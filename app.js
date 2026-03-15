@@ -166,7 +166,13 @@ class BTCIndexApp {
         `).join('');
     }
 
-    // 生成历史数据
+    // 伪随机数生成器（固定种子）
+    seededRandom(seed) {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    }
+
+    // 生成历史数据（使用固定种子，确保每次结果一致）
     generateHistoricalData(currentPrice) {
         const data = [];
         const now = Math.floor(Date.now() / 1000);
@@ -185,7 +191,8 @@ class BTCIndexApp {
             else if (i >= 365) baseRatio = this.lerp(i, 730, 365, keyRatios[730], keyRatios[365]);
             else baseRatio = this.lerp(i, 365, 0, keyRatios[365], keyRatios[0]);
             
-            const volatility = 1 + (Math.random() - 0.5) * 0.15;
+            // 使用固定种子的随机数，确保每次生成的数据一致
+            const volatility = 1 + (this.seededRandom(i) - 0.5) * 0.15;
             data.push({ time, price: currentPrice * baseRatio * volatility });
         }
         return data;
