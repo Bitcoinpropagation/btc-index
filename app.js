@@ -760,28 +760,14 @@ class BTCIndexApp {
             document.getElementById('indexStatus').textContent = error.message;
         }
     }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new BTCIndexApp();
-    window.app.run();
-});
 
     // 计算矿工成本
     calculateMinerCost(currentPrice) {
-        // 基于当前价格和算力估算矿工成本
-        // 简化模型：假设矿工成本大约是当前价格的 60-80%（根据市场周期变化）
-        // 实际上应该根据全网算力、电费、矿机效率等计算
-        
-        // 使用固定种子确保结果一致
-        const baseCostRatio = 0.65 + this.seededRandom(1000) * 0.15; // 65% - 80%
+        const baseCostRatio = 0.65 + this.seededRandom(1000) * 0.15;
         const minerCost = currentPrice * baseCostRatio;
-        
-        // 根据历史数据微调（模拟不同周期的成本变化）
         const now = Math.floor(Date.now() / 1000);
         const dayOfYear = Math.floor((now % 31536000) / 86400);
-        const seasonalFactor = 1 + Math.sin(dayOfYear / 365 * Math.PI * 2) * 0.05; // ±5% 季节性波动
-        
+        const seasonalFactor = 1 + Math.sin(dayOfYear / 365 * Math.PI * 2) * 0.05;
         return minerCost * seasonalFactor;
     }
 
@@ -818,3 +804,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new BTCIndexApp();
+    window.app.run();
+});
