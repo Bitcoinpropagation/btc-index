@@ -161,7 +161,24 @@ class BTCIndexApp {
         if (i18n[lang]) {
             this.currentLang = lang;
             localStorage.setItem('btcIndexLang', lang);
+            
+            // 更新语言按钮样式
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === lang) {
+                    btn.classList.remove('bg-white/10');
+                    btn.classList.add('bg-blue-500/30');
+                } else {
+                    btn.classList.remove('bg-blue-500/30');
+                    btn.classList.add('bg-white/10');
+                }
+            });
+            
             this.updateUI();
+            // 重新计算并显示当前状态
+            if (this.btcData && this.btcData.length > 0) {
+                const status = this.getCurrentStatus(this.btcData);
+                this.updateDisplay(status);
+            }
         }
     }
 
@@ -527,6 +544,17 @@ class BTCIndexApp {
             const status = this.getCurrentStatus(data);
             
             setTimeout(() => { if (this.initChart()) this.updateChart(this.filteredData); }, 100);
+            // 设置语言按钮样式
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === this.currentLang) {
+                    btn.classList.remove('bg-white/10');
+                    btn.classList.add('bg-blue-500/30');
+                } else {
+                    btn.classList.remove('bg-blue-500/30');
+                    btn.classList.add('bg-white/10');
+                }
+            });
+            
             this.updateUI();
             this.updateDisplay(status);
             await this.fetchAdsConfig();
