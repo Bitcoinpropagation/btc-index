@@ -38,6 +38,14 @@ const i18n = {
         minerProfit: "Miners Profitable | Network Healthy",
         minerLowProfit: "Miners Low Profit | Watch Cautiously",
         minerLoss: "Miners at Loss | Possible Bottom",
+        minerCurrentPrice: "Current BTC Price",
+        minerCostLabel: "Est. Miner Cost",
+        minerCostRatio: "Price/Cost Ratio",
+        minerCostNote: "Avg cost to produce 1 BTC",
+        minerIndicatorTitle: "Indicator Guide",
+        minerIndicator1: "Price > Cost×1.5: Miners profitable, network healthy",
+        minerIndicator2: "Cost < Price < Cost×1.5: Low profit, watch cautiously",
+        minerIndicator3: "Price < Cost: Miners at loss, possible bottom",
         dcaCalculator: "DCA Profit Calculator",
         monthlyAmount: "Monthly Amount (USD)",
         startDate: "Start Date",
@@ -106,6 +114,14 @@ const i18n = {
         minerProfit: "矿工盈利 | 网络健康",
         minerLowProfit: "矿工微利 | 谨慎观望",
         minerLoss: "矿工亏损 | 可能底部",
+        minerCurrentPrice: "当前比特币价格",
+        minerCostLabel: "预估矿工成本",
+        minerCostRatio: "价格/成本比",
+        minerCostNote: "生产1枚BTC的平均成本",
+        minerIndicatorTitle: "指标说明",
+        minerIndicator1: "价格 > 成本×1.5: 矿工盈利，网络健康",
+        minerIndicator2: "成本 < 价格 < 成本×1.5: 矿工微利，谨慎观望",
+        minerIndicator3: "价格 < 成本: 矿工亏损，可能底部",
         disclaimer: "数据来源：CoinGecko API | 仅供参考，不构成投资建议",
         chartLoading: "正在加载图表...",
         chartError: "图表加载失败，请刷新页面重试"
@@ -439,6 +455,24 @@ class BTCIndexApp {
         if (calcLabels[0]) calcLabels[0].textContent = this.t('monthlyAmount');
         if (calcLabels[1]) calcLabels[1].textContent = this.t('startDate');
         document.querySelector('button[onclick="app.calculateDCA()"]').textContent = this.t('calculate');
+        
+        // 更新矿工成本模块
+        const minerSections = document.querySelectorAll('.glass.rounded-xl.p-6.mb-8');
+        if (minerSections[3]) {
+            minerSections[3].querySelector('h2').textContent = this.t('minerCost');
+            const minerLabels = minerSections[3].querySelectorAll('.text-gray-400.text-sm');
+            if (minerLabels[0]) minerLabels[0].textContent = this.t('minerCurrentPrice');
+            if (minerLabels[1]) minerLabels[1].textContent = this.t('minerCostLabel');
+            if (minerLabels[2]) minerLabels[2].textContent = this.t('minerCostRatio');
+            const minerNote = minerSections[3].querySelector('.text-xs.text-gray-500');
+            if (minerNote) minerNote.textContent = this.t('minerCostNote');
+            const indicatorTitle = minerSections[3].querySelector('.text-sm.text-gray-400.mb-2');
+            if (indicatorTitle) indicatorTitle.textContent = this.t('minerIndicatorTitle');
+            const indicators = minerSections[3].querySelectorAll('.grid.grid-cols-1.md\\:grid-cols-3.gap-4.text-sm > div');
+            if (indicators[0]) indicators[0].innerHTML = '<span class="font-bold">' + this.t('minerIndicator1').split(':')[0] + ':</span> ' + this.t('minerIndicator1').split(':')[1];
+            if (indicators[1]) indicators[1].innerHTML = '<span class="font-bold">' + this.t('minerIndicator2').split(':')[0] + ':</span> ' + this.t('minerIndicator2').split(':')[1];
+            if (indicators[2]) indicators[2].innerHTML = '<span class="font-bold">' + this.t('minerIndicator3').split(':')[0] + ':</span> ' + this.t('minerIndicator3').split(':')[1];
+        }
         
         const resultLabels = document.querySelectorAll('#dcaResult .text-sm');
         if (resultLabels[0]) resultLabels[0].textContent = this.t('totalInvested');
