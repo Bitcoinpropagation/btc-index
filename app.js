@@ -436,7 +436,8 @@ class BTCIndexApp {
         }
         
         // 使用更精确的选择器来更新三个数据卡片的标签
-        const dataCards = document.querySelectorAll('.grid.grid-cols-2.md\:grid-cols-3 > .glass.rounded-xl');
+        // 使用属性选择器来避免 Tailwind 的 md: 前缀问题
+        const dataCards = document.querySelectorAll('[class*="grid-cols-2"] > .glass.rounded-xl, [class*="grid-cols-3"] > .glass.rounded-xl');
         if (dataCards[0]) {
             const label = dataCards[0].querySelector('.text-gray-400.text-sm');
             if (label) label.textContent = this.t('currentIndex');
