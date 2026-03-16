@@ -617,29 +617,82 @@ class BTCIndexApp {
         try {
             const chartContainer = document.getElementById('chart');
             const loadingEl = document.getElementById('chartLoading');
-            if (!chartContainer) return false;
-            if (typeof LightweightCharts === 'undefined') {
-                if (loadingEl) loadingEl.classList.add('hidden');
-                document.getElementById('chartError').classList.remove('hidden');
+            const errorEl = document.getElementById('chartError');
+            
+            if (!chartContainer) {
+                console.error('Chart container not found');
                 return false;
             }
+            
+            // 检查 LightweightCharts 是否加载成功
+            if (typeof LightweightCharts === 'undefined') {
+                console.error('LightweightCharts library not loaded');
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (errorEl) {
+                    errorEl.classList.remove('hidden');
+                    // 更新错误信息
+                    const errorText = errorEl.querySelector('p.text-red-400');
+                    if (errorText) errorText.textContent = this.t('chartError') || 'Chart library failed to load';
+                }
+                return false;
+            }
+            
             if (loadingEl) loadingEl.classList.add('hidden');
             chartContainer.classList.remove('hidden');
             
+            // 创建图表
             this.chart = LightweightCharts.createChart(chartContainer, {
-                layout: { background: { color: 'transparent' }, textColor: '#d1d5db' },
-                grid: { vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, horzLines: { color: 'rgba(255, 255, 255, 0.1)' } },
-                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-                rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                handleScroll: { vertTouchDrag: false },
-                handleScale: { axisPressedMouseMove: false }
+                layout: { 
+                    background: { color: 'transparent' }, 
+                    textColor: '#d1d5db' 
+                },
+                grid: { 
+                    vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                    horzLines: { color: 'rgba(255, 255, 255, 0.1)' } 
+                },
+                crosshair: { 
+                    mode: LightweightCharts.CrosshairMode.Normal 
+                },
+                rightPriceScale: { 
+                    borderColor: 'rgba(255, 255, 255, 0.1)' 
+                },
+                timeScale: { 
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    timeVisible: false
+                },
+                handleScroll: { 
+                    vertTouchDrag: false 
+                },
+                handleScale: { 
+                    axisPressedMouseMove: false 
+                }
             });
-            this.priceSeries = this.chart.addLineSeries({ title: 'BTC Price', color: '#f59e0b', lineWidth: 2 });
-            this.ma200Series = this.chart.addLineSeries({ title: '200-Day Avg', color: '#3b82f6', lineWidth: 1 });
-            this.indexSeries = this.chart.addLineSeries({ title: 'DCA Index', color: '#10b981', lineWidth: 2, priceScaleId: 'right' });
+            
+            // 添加价格线
+            this.priceSeries = this.chart.addLineSeries({ 
+                title: this.t('btcPrice') || 'BTC Price', 
+                color: '#f59e0b', 
+                lineWidth: 2 
+            });
+            
+            // 添加200日均线
+            this.ma200Series = this.chart.addLineSeries({ 
+                title: this.t('avgCost') || '200-Day Avg', 
+                color: '#3b82f6', 
+                lineWidth: 1 
+            });
+            
+            // 添加指数线（使用右侧Y轴）
+            this.indexSeries = this.chart.addLineSeries({ 
+                title: this.t('currentIndex') || 'DCA Index', 
+                color: '#10b981', 
+                lineWidth: 2, 
+                priceScaleId: 'right' 
+            });
+            
             this.chart.priceScale('right').applyOptions({ visible: true });
             
+            // 添加ResizeObserver
             new ResizeObserver(entries => {
                 if (this.chart && entries[0]) {
                     const { width, height } = entries[0].contentRect;
@@ -648,10 +701,15 @@ class BTCIndexApp {
             }).observe(chartContainer);
             
             this.chartInitialized = true;
+            console.log('Chart initialized successfully');
             return true;
+            
         } catch (error) {
-            document.getElementById('chartLoading').classList.add('hidden');
-            document.getElementById('chartError').classList.remove('hidden');
+            console.error('Chart initialization error:', error);
+            const loadingEl = document.getElementById('chartLoading');
+            const errorEl = document.getElementById('chartError');
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (errorEl) errorEl.classList.remove('hidden');
             return false;
         }
     }
@@ -789,6 +847,23 @@ class BTCIndexApp {
                 <button class="w-full py-2 px-4 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors group-hover:bg-white/20">${this.currentLang === 'zh' ? '立即下载' : this.currentLang === 'ja' ? '今すぐダウンロード' : 'Download Now'}</button>
             </div>
         `).join('');
+    }
+
+    // 重试加载图表
+    retryChart() {
+        console.log('Retrying chart initialization...');
+        const errorEl = document.getElementById('chartError');
+        const loadingEl = document.getElementById('chartLoading');
+        
+        if (errorEl) errorEl.classList.add('hidden');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        
+        // 延迟后重试
+        setTimeout(() => {
+            if (this.initChart()) {
+                this.updateChart(this.filteredData);
+            }
+        }, 1000);
     }
 
     startPriceRefresh() { this.fetchBTCPrice(); setInterval(() => this.fetchBTCPrice(), 30000); }
