@@ -75,23 +75,7 @@
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
-    <!-- Geo Restriction Notice -->
-    <div id="geoNotice" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-        <div class="glass rounded-xl p-8 max-w-lg text-center">
-            <div class="text-4xl mb-4">🚫</div>
-            <h2 class="text-2xl font-bold mb-4">Access Restricted / 访问受限</h2>
-            <p class="text-gray-300 mb-4 leading-relaxed">
-                This website is not available to users in mainland China. Please comply with local laws and regulations regarding cryptocurrency trading and investment.
-            </p>
-            <p class="text-gray-300 mb-6 leading-relaxed text-lg">
-                本网站不对中国大陆用户提供服务。<br>
-                请遵守当地关于加密货币交易和投资的法律法规。
-            </p>
-            <button onclick="document.getElementById('geoNotice').classList.add('hidden')" class="mt-6 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                I understand / 我已了解
-            </button>
-        </div>
-    </div>
+
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <header class="text-center mb-8">
@@ -314,30 +298,235 @@
     }
     </script>
 
-    <!-- Geo Detection Script -->
+    <!-- VPN Detection Script -->
     <script>
-        // 检测中国大陆 IP 或时区
-        async function checkGeoRestriction() {
-            try {
-                // 方法1: 检测时区
-                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const isChinaTimezone = timezone === 'Asia/Shanghai' || timezone === 'Asia/Hong_Kong' || timezone === 'Asia/Macau';
-                
-                // 方法2: 检测浏览器语言
-                const lang = navigator.language || navigator.userLanguage;
-                const isChineseLang = lang.startsWith('zh-CN') || lang === 'zh-Hans-CN';
-                
-                // 如果符合中国大陆特征，显示提示
-                if (isChinaTimezone || isChineseLang) {
-                    document.getElementById('geoNotice').classList.remove('hidden');
+        // VPN 检测与提示
+        (function() {
+            'use strict';
+
+            const CONFIG = {
+                // 使用 CoinGecko API 作为检测目标（你网站实际依赖的）
+                testUrl: 'https://api.coingecko.com/api/v3/ping',
+                timeout: 5000,
+                retries: 2,
+                recheckInterval: 24 * 60 * 60 * 1000, // 24小时
+            };
+
+            const STORAGE_KEY = 'vpn-check-dismissed';
+            const LAST_CHECK_KEY = 'vpn-last-check';
+
+            async function checkNetwork() {
+                for (let i = 0; i < CONFIG.retries; i++) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), CONFIG.timeout);
+                        
+                        const response = await fetch(CONFIG.testUrl, {
+                            method: 'HEAD',
+                            signal: controller.signal,
+                            cache: 'no-store'
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        return response.ok;
+                    } catch (error) {
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    }
                 }
-            } catch (e) {
-                console.log('Geo check failed');
+                return false;
             }
-        }
-        
-        // 页面加载时检测
-        document.addEventListener('DOMContentLoaded', checkGeoRestriction);
+
+            function shouldShowPrompt() {
+                const dismissed = localStorage.getItem(STORAGE_KEY);
+                if (dismissed === 'true') {
+                    const lastCheck = parseInt(localStorage.getItem(LAST_CHECK_KEY) || '0');
+                    if (Date.now() - lastCheck < CONFIG.recheckInterval) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function createPrompt() {
+                const overlay = document.createElement('div');
+                overlay.id = 'vpn-prompt-overlay';
+                overlay.innerHTML = `
+                    <div class="vpn-prompt-box">
+                        <div class="vpn-prompt-header">
+                            <span class="vpn-icon">🌐</span>
+                            <h3>网络连接提示</h3>
+                        </div>
+                        <div class="vpn-prompt-body">
+                            <p>检测到 CoinGecko 数据接口连接缓慢或无法访问。</p>
+                            <p>为了获得实时比特币价格和指数数据，建议开启 VPN 或代理工具。</p>
+                            <div class="vpn-features">
+                                <span class="feature-tag">⚡ 实时价格数据</span>
+                                <span class="feature-tag">📊 完整图表功能</span>
+                            </div>
+                        </div>
+                        <div class="vpn-prompt-footer">
+                            <button class="vpn-btn vpn-btn-secondary" id="vpn-dismiss">
+                                我已开启
+                            </button>
+                            <button class="vpn-btn vpn-btn-primary" id="vpn-refresh">
+                                🔄 刷新重试
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                const styleSheet = document.createElement('style');
+                styleSheet.textContent = `
+                    #vpn-prompt-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0, 0, 0, 0.85);
+                        backdrop-filter: blur(6px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 999999;
+                        padding: 20px;
+                        animation: vpnFadeIn 0.3s ease;
+                    }
+                    @keyframes vpnFadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes vpnSlideUp {
+                        from { opacity: 0; transform: translateY(30px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .vpn-prompt-box {
+                        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                        color: #ffffff;
+                        border-radius: 16px;
+                        max-width: 440px;
+                        width: 100%;
+                        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+                        animation: vpnSlideUp 0.4s ease;
+                        overflow: hidden;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    }
+                    .vpn-prompt-header {
+                        padding: 24px 24px 16px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+                    .vpn-icon {
+                        font-size: 28px;
+                    }
+                    .vpn-prompt-header h3 {
+                        margin: 0;
+                        font-size: 18px;
+                        font-weight: 600;
+                    }
+                    .vpn-prompt-body {
+                        padding: 20px 24px;
+                    }
+                    .vpn-prompt-body p {
+                        margin: 0 0 12px;
+                        line-height: 1.6;
+                        font-size: 14px;
+                        opacity: 0.9;
+                    }
+                    .vpn-features {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-top: 16px;
+                    }
+                    .feature-tag {
+                        background: rgba(59, 130, 246, 0.2);
+                        color: #60a5fa;
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        font-size: 12px;
+                        font-weight: 500;
+                    }
+                    .vpn-prompt-footer {
+                        padding: 16px 24px 24px;
+                        display: flex;
+                        gap: 12px;
+                        justify-content: flex-end;
+                    }
+                    .vpn-btn {
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        border: none;
+                        font-size: 14px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .vpn-btn-primary {
+                        background: #3b82f6;
+                        color: white;
+                    }
+                    .vpn-btn-primary:hover {
+                        background: #2563eb;
+                        transform: translateY(-1px);
+                    }
+                    .vpn-btn-secondary {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: white;
+                    }
+                    .vpn-btn-secondary:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                    }
+                    @media (max-width: 480px) {
+                        .vpn-prompt-footer {
+                            flex-direction: column;
+                        }
+                        .vpn-btn {
+                            width: 100%;
+                        }
+                    }
+                `;
+
+                document.head.appendChild(styleSheet);
+                document.body.appendChild(overlay);
+
+                // 绑定事件
+                document.getElementById('vpn-dismiss').addEventListener('click', () => {
+                    localStorage.setItem(STORAGE_KEY, 'true');
+                    localStorage.setItem(LAST_CHECK_KEY, Date.now().toString());
+                    overlay.remove();
+                    styleSheet.remove();
+                });
+
+                document.getElementById('vpn-refresh').addEventListener('click', () => {
+                    localStorage.removeItem(STORAGE_KEY);
+                    window.location.reload();
+                });
+            }
+
+            async function init() {
+                if (!shouldShowPrompt()) return;
+
+                // 延迟检测，让页面先加载
+                setTimeout(async () => {
+                    const isNetworkOk = await checkNetwork();
+                    
+                    if (!isNetworkOk) {
+                        createPrompt();
+                    }
+                    
+                    localStorage.setItem(LAST_CHECK_KEY, Date.now().toString());
+                }, 3000);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
     </script>
 
     <!-- Load lightweight-charts first -->
