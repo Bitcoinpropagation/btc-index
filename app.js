@@ -788,6 +788,32 @@ class BTCIndexApp {
         }
     }
 
+    // 获取真实历史数据
+    async fetchHistoricalData() {
+        try {
+            // 获取5年历史数据
+            const response = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1825');
+            if (!response.ok) throw new Error('Historical data fetch failed');
+            const data = await response.json();
+            
+            // 转换数据格式
+            const prices = data.prices;
+            const now = Math.floor(Date.now() / 1000);
+            const historicalData = prices.map((item, index) => {
+                const timestamp = Math.floor(item[0] / 1000);
+                return {
+                    time: timestamp,
+                    price: item[1]
+                };
+            });
+            
+            return historicalData;
+        } catch (error) {
+            console.error('Failed to fetch historical data:', error);
+            return null;
+        }
+    }
+
     updateLastUpdateTime() {
         const lastUpdateEl = document.getElementById('lastUpdate');
         if (lastUpdateEl && this.lastUpdateTime) {
@@ -873,13 +899,25 @@ class BTCIndexApp {
             const savedLang = localStorage.getItem('btcIndexLang');
             if (savedLang && i18n[savedLang]) this.currentLang = savedLang;
             
+            // 先获取当前价格
             const currentPrice = await this.fetchBTCPrice();
-            const basePrice = currentPrice || 70000;
-            this.btcData = this.generateHistoricalData(basePrice);
+            
+            // 尝试获取真实历史数据，失败则使用模拟数据
+            let historicalData = await this.fetchHistoricalData();
+            if (!historicalData || historicalData.length === 0) {
+                console.log('Using simulated historical data');
+                const basePrice = currentPrice || 70000;
+                historicalData = this.generateHistoricalData(basePrice);
+            } else {
+                console.log('Using real historical data from CoinGecko');
+            }
+            
+            this.btcData = historicalData;
             let data = this.calculate200DMA(this.btcData);
             data = this.calculateExponentialGrowth(data);
             data = this.calculateAHR999(data);
-            this.btcData = data; this.filteredData = data;
+            this.btcData = data; 
+            this.filteredData = data;
             const status = this.getCurrentStatus(data);
             
             setTimeout(() => { if (this.initChart()) this.updateChart(this.filteredData); }, 100);
