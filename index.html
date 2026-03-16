@@ -75,6 +75,23 @@
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
+    <!-- Geo Restriction Notice -->
+    <div id="geoNotice" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div class="glass rounded-xl p-8 max-w-lg text-center">
+            <div class="text-4xl mb-4">🚫</div>
+            <h2 class="text-2xl font-bold mb-4">Access Restricted / 访问受限</h2>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+                This website is not available to users in mainland China. Please comply with local laws and regulations regarding cryptocurrency trading and investment.
+            </p>
+            <p class="text-gray-300 mb-6 leading-relaxed text-lg">
+                本网站不对中国大陆用户提供服务。<br>
+                请遵守当地关于加密货币交易和投资的法律法规。
+            </p>
+            <button onclick="document.getElementById('geoNotice').classList.add('hidden')" class="mt-6 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+                I understand / 我已了解
+            </button>
+        </div>
+    </div>
 
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
