@@ -415,20 +415,40 @@ class BTCIndexApp {
         document.querySelector('header p').textContent = this.t('subtitle');
         document.title = this.t('title') + ' - BTC DCA Index';
         
-        const priceLabels = document.querySelectorAll('.text-sm.text-gray-400');
-        if (priceLabels[0]) priceLabels[0].textContent = this.t('livePrice');
-        if (priceLabels[1]) priceLabels[1].textContent = this.t('change24h');
-        if (priceLabels[2]) priceLabels[2].textContent = this.t('dataSource');
+        // 更新实时价格区域的标签
+        const livePriceSection = document.querySelector('.glass.rounded-xl.p-6.mb-8');
+        if (livePriceSection) {
+            const labels = livePriceSection.querySelectorAll('.text-sm.text-gray-400');
+            if (labels[0]) labels[0].textContent = this.t('livePrice');
+            if (labels[1]) labels[1].textContent = this.t('change24h');
+            if (labels[2]) labels[2].textContent = this.t('dataSource');
+        }
         
         document.querySelector('.pulse-dot + span').textContent = this.t('updateEvery');
         document.getElementById('lastUpdate').parentNode.childNodes[0].textContent = this.t('lastUpdate') + ': ';
         document.querySelector('button[onclick="window.location.reload()"]').textContent = this.t('refresh');
         
-        const cards = document.querySelectorAll('.glass.rounded-xl');
-        if (cards[1]) cards[1].querySelector('.text-gray-400').textContent = this.t('currentIndex');
-        if (cards[2]) cards[2].querySelector('.text-gray-400').textContent = this.t('btcPrice');
-        if (cards[3]) cards[3].querySelector('.text-gray-400').textContent = this.t('avgCost');
-        if (cards[4]) cards[4].querySelector('.text-gray-400').textContent = this.t('suggestion');
+        // 使用 ID 精确选择指数卡片区域的标签
+        const indexCard = document.getElementById('indexCard');
+        if (indexCard) {
+            const label = indexCard.querySelector('.text-gray-400.text-sm');
+            if (label) label.textContent = this.t('currentIndex');
+        }
+        
+        // 使用更精确的选择器来更新三个数据卡片的标签
+        const dataCards = document.querySelectorAll('.grid.grid-cols-2.md\:grid-cols-3 > .glass.rounded-xl');
+        if (dataCards[0]) {
+            const label = dataCards[0].querySelector('.text-gray-400.text-sm');
+            if (label) label.textContent = this.t('currentIndex');
+        }
+        if (dataCards[1]) {
+            const label = dataCards[1].querySelector('.text-gray-400.text-sm');
+            if (label) label.textContent = this.t('btcPrice');
+        }
+        if (dataCards[2]) {
+            const label = dataCards[2].querySelector('.text-gray-400.text-sm');
+            if (label) label.textContent = this.t('avgCost');
+        }
         
         document.querySelector('#chart').parentNode.querySelector('h2').textContent = this.t('history');
         
