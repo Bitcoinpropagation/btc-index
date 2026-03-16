@@ -72,6 +72,65 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Button loading state */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        /* Price update animation */
+        .price-updated {
+            animation: priceFlash 0.5s ease;
+        }
+        @keyframes priceFlash {
+            0% { color: #10b981; }
+            100% { color: inherit; }
+        }
+        /* Language selector mobile */
+        .lang-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        @media (max-width: 640px) {
+            .lang-selector {
+                justify-content: center;
+            }
+            .lang-selector button {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+        /* Index badge */
+        .index-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        /* Smooth transitions */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
@@ -97,7 +156,7 @@
         <!-- Header -->
         <header class="text-center mb-8">
             <div class="flex justify-end mb-4">
-                <div class="flex gap-2">
+                <div class="lang-selector">
                     <button onclick="app.setLanguage('en')" class="lang-btn px-3 py-1 text-sm rounded bg-blue-500/30 hover:bg-blue-500/40 transition-colors" data-lang="en">EN</button>
                     <button onclick="app.setLanguage('zh')" class="lang-btn px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20 transition-colors" data-lang="zh">CN</button>
                     <button onclick="app.setLanguage('ja')" class="lang-btn px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20 transition-colors" data-lang="ja">JP</button>
@@ -123,7 +182,7 @@
                     <div>
                         <div class="text-sm text-gray-400">比特币实时价格</div>
                         <div class="flex items-center gap-2">
-                            <span id="livePrice" class="text-2xl font-bold">$--</span>
+                            <span id="livePrice" class="text-2xl font-bold transition-all">$--</span>
                             <span class="pulse-dot w-2 h-2 bg-green-400 rounded-full"></span>
                             <span class="text-xs text-gray-500">每30秒更新</span>
                         </div>
@@ -142,7 +201,10 @@
             </div>
             <!-- Last Update Time -->
             <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
-                <span class="text-xs text-gray-500">最后更新: <span id="lastUpdate">--</span></span>
+                <span class="text-xs text-gray-500">
+                    最后更新: <span id="lastUpdate">--</span>
+                    <span id="updateStatus" class="ml-2 hidden text-green-400">✓ 已更新</span>
+                </span>
                 <button onclick="window.location.reload()" class="text-xs text-blue-400 hover:text-blue-300 transition-colors">
                     🔄 刷新数据
                 </button>
@@ -153,12 +215,13 @@
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
             <div class="glass rounded-xl p-4 md:p-6 text-center" id="indexCard">
                 <div class="text-gray-400 text-sm mb-2">当前指数</div>
-                <div id="currentIndex" class="text-3xl md:text-4xl font-bold">--</div>
+                <div id="currentIndex" class="text-3xl md:text-4xl font-bold transition-all">--</div>
+                <div id="indexZoneBadge" class="index-badge hidden"></div>
                 <div id="indexStatus" class="text-sm mt-2">--</div>
             </div>
             <div class="glass rounded-xl p-4 md:p-6 text-center">
                 <div class="text-gray-400 text-sm mb-2">比特币价格</div>
-                <div id="btcPrice" class="text-xl md:text-2xl font-bold">$--</div>
+                <div id="btcPrice" class="text-xl md:text-2xl font-bold transition-all">$--</div>
             </div>
             <div class="glass rounded-xl p-4 md:p-6 text-center">
                 <div class="text-gray-400 text-sm mb-2">200日定投成本</div>
@@ -186,11 +249,18 @@
             <!-- Chart Container -->
             <div id="chart" class="w-full h-64 md:h-96 chart-container hidden"></div>
             <!-- Chart Error -->
-            <div id="chartError" class="hidden text-center text-red-400 py-8">
-                <p>图表加载失败，请刷新页面重试</p>
-                <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors">
-                    刷新页面
-                </button>
+            <div id="chartError" class="hidden text-center py-8">
+                <div class="text-4xl mb-4">📊</div>
+                <p class="text-red-400 mb-2">图表加载失败</p>
+                <p class="text-gray-400 text-sm mb-4">可能是网络连接问题，建议检查 VPN 或代理设置</p>
+                <div class="flex gap-2 justify-center">
+                    <button onclick="app.retryChart()" class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors">
+                        🔄 重试加载
+                    </button>
+                    <button onclick="window.location.reload()" class="px-4 py-2 bg-white/10 text-white rounded hover:bg-white/20 transition-colors">
+                        刷新页面
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -234,7 +304,7 @@
                     <input type="date" id="startDate" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white">
                 </div>
                 <div class="flex items-end">
-                    <button onclick="app.calculateDCA()" class="w-full bg-blue-500/30 hover:bg-blue-500/40 text-blue-400 py-2 rounded-lg transition-colors">
+                    <button id="calcBtn" onclick="app.calculateDCA()" class="w-full bg-blue-500/30 hover:bg-blue-500/40 text-blue-400 py-2 rounded-lg transition-colors">
                         计算收益
                     </button>
                 </div>
@@ -265,7 +335,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="text-center p-4 bg-white/5 rounded-lg">
                     <div class="text-gray-400 text-sm mb-2">当前比特币价格</div>
-                    <div id="minerBtcPrice" class="text-2xl font-bold text-orange-400">$--</div>
+                    <div id="minerBtcPrice" class="text-2xl font-bold text-orange-400 transition-all">$--</div>
                 </div>
                 <div class="text-center p-4 bg-white/5 rounded-lg">
                     <div class="text-gray-400 text-sm mb-2">预估矿工成本</div>
@@ -322,11 +392,10 @@
             'use strict';
 
             const CONFIG = {
-                // 使用 CoinGecko API 作为检测目标（你网站实际依赖的）
                 testUrl: 'https://api.coingecko.com/api/v3/ping',
                 timeout: 5000,
                 retries: 2,
-                recheckInterval: 24 * 60 * 60 * 1000, // 24小时
+                recheckInterval: 24 * 60 * 60 * 1000,
             };
 
             const STORAGE_KEY = 'vpn-check-dismissed';
@@ -509,7 +578,6 @@
                 document.head.appendChild(styleSheet);
                 document.body.appendChild(overlay);
 
-                // 绑定事件
                 document.getElementById('vpn-dismiss').addEventListener('click', () => {
                     localStorage.setItem(STORAGE_KEY, 'true');
                     localStorage.setItem(LAST_CHECK_KEY, Date.now().toString());
@@ -526,7 +594,6 @@
             async function init() {
                 if (!shouldShowPrompt()) return;
 
-                // 延迟检测，让页面先加载
                 setTimeout(async () => {
                     const isNetworkOk = await checkNetwork();
                     
@@ -549,5 +616,6 @@
     <!-- Load lightweight-charts first -->
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="app.js"></script>
+    <script src="app-optimizations.js"></script>
 </body>
 </html>
