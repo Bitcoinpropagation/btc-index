@@ -716,9 +716,19 @@ class BTCIndexApp {
 
     updateChart(data) {
         if (!this.priceSeries || !this.ma200Series || !this.indexSeries) return;
-        const priceData = data.filter(d => d.price).map(d => ({ time: d.time, value: d.price }));
+        
+        // 复制价格数据，避免修改原始数据
+        let priceData = data.filter(d => d.price).map(d => ({ time: d.time, value: d.price }));
+        
+        // 如果有实时价格，更新最后一个数据点
+        if (this.currentBTCPrice > 0 && priceData.length > 0) {
+            const lastIndex = priceData.length - 1;
+            priceData[lastIndex].value = this.currentBTCPrice;
+        }
+        
         const ma200Data = data.filter(d => d.ma200).map(d => ({ time: d.time, value: d.ma200 }));
         const indexData = data.filter(d => d.ahr999).map(d => ({ time: d.time, value: d.ahr999 }));
+        
         this.priceSeries.setData(priceData);
         this.ma200Series.setData(ma200Data);
         this.indexSeries.setData(indexData);
